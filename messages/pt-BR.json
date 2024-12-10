@@ -1,0 +1,67 @@
+{
+    "person": {
+        "role": "Desenvolvedor Backend"
+    },
+    "home": {
+        "label": "Início",
+        "title": "Portfolio de {name}",
+        "description": "Site de portifólio apresentando meu trabalho como {role}",
+        "headline": "Desenvolvedor Backend sempre dando o seu melhor",
+        "subline": "I'm Selene, a design engineer at FLY, where I craft intuitive user experiences. After hours, I build my own projects."
+    },
+    "about": {
+        "label": "Sobre",
+        "title": "Sobre mim",
+        "description": "Conheça {name}, {role} de {location}",
+        "callSchedule": "Agende uma chamada",
+        "intro": {
+            "title": "Introdução",
+            "description": "Sou um engenheiro de Software especializado em desenvolvimento backend com experiência em sistemas de alta complexidade e escalabilidade. Inicialmente formado em Engenharia Aeronáutica, descobri minha paixão pela programação logo nos primeiros períodos, onde tive meu primeiro contato com a área. Pouco a pouco vi que desenvolvimento backend era o que eu gostaria de fazer profissionalmente e me dediquei ao máximo para aprender tudo que podia sobre o tema. A dedicação nunca acaba e estou sempre me desenvolvendo e dando o melhor de mim."
+        },
+        "work": {
+            "title": "Experiência de Trabalho",
+            "experiences": {
+                "Zup": {
+                    "timeframe": "2021 - 2024",
+                    "role": "Desenvolvedor Backend",
+                    "achievements": "Desenvolvi e mantive projetos de grande impacto, como o '<b>Samsung no Itaú</b>', uma loja interna do aplicativo do Itaú voltada para vendas de produtos exclusivos da Samsung. Atuei em um backend complexo, composto por diversos microsserviços escritos em Java e Kotlin, utilizando arquitetura hexagonal e comunicação por mensageria.;Liderei a integração de dados com o '<b>Data Mesh do Itaú</b>', criando uma API de ingestão de dados utilizada por vários times do ecossistema. A solução utilizava tecnologias da AWS, como SQS, API Gateway, S3, ECS, Glue, AWS Athena, DynamoDB, KMS e AWS Lambda, implementadas com Terraform e pipelines no GitHub Actions, resultando em uma solução robusta, escalável e de alta disponibilidade.;Trabalhei no projeto de desenvolvimento da API interna de pagamentos '<b>\"Payments as a Service\" (PaaS)</b>' para o Itaú, em um ambiente de microsserviços altamente complexo, permitindo o uso integrado de múltiplos meios de pagamento em uma única transação."
+                }
+            }
+        },
+        "studies": {
+            "title": "Estudos",
+            "institutions": {
+                "UFU": {
+                    "name": "Universidade Federal de Uberlândia",
+                    "description": "Bacharelado em Engenharia Aeronáutica."
+                }
+            }
+        },
+        "technical": {
+            "title": "Habilidades",
+            "skills": {
+                "Figma": {
+                    "description": "Able to prototype in Figma with Once UI with unnatural speed."
+                }
+            }
+        }
+    },
+    "blog": {
+        "label": "Blog",
+        "title": "Writing about design and tech...",
+        "description": "Read what {name} has been up to recently"
+    },
+    "work": {
+        "label": "Projetos",
+        "title": "Meus Projetos",
+        "description": "Projetos de desenvolvimento por {name}"
+    },
+    "gallery": {
+        "label": "Galeria",
+        "title": "Minha galeria de fotos",
+        "description": "Uma coleção de fotos por {name}"
+    },
+    "projectCard": {
+        "label": "Read Case Study"
+    }
+}
