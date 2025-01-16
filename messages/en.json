@@ -1,6 +1,6 @@
 {
     "person": {
-        "role": "Design Engineer"
+        "role": "Backend Software Developer"
     },
     "newsletter": {
         "title": "Subscribe to {firstName}'s Newsletter",
@@ -22,28 +22,24 @@
         "callSchedule": "Schedule a call",
         "intro": {
             "title": "Introduction",
-            "description": "Selene is a Jakarta-based design engineer with a passion for transforming complex challenges into simple, elegant design solutions. Her work spans digital interfaces, interactive experiences, and the convergence of design and technology."
+            "description": "I am a Software engineer specialized in backend development with experience in highly complex and scalable systems. Initially graduated in Aeronautical Engineering, I discovered my passion for programming in the first periods, where I had my first contact with the area. Little by little I saw that backend development was what I would like to do professionally and I dedicated myself to learning everything I could about the topic. Dedication never ends and I am always developing and giving my best."
         },
         "work": {
             "title": "Work Experience",
             "experiences": {
-                "FLY": {
-                    "timeframe": "2022 - Present",
-                    "role": "Senior Design Engineer",
-                    "achievements": "Redesigned the UI/UX for the FLY platform, resulting in a 20% increase in user engagement and 30% faster load times.;Spearheaded the integration of AI tools into design workflows, enabling designers to iterate 50% faster."
-                },
-                "Creativ3": {
-                    "timeframe": "2018 - 2022",
-                    "role": "Lead Designer",
-                    "achievements": "Developed a design system that unified the brand across multiple platforms, improving design consistency by 40%.;Led a cross-functional team to launch a new product line, contributing to a 15% increase in overall company revenue."
+                "Zup": {
+                    "timeframe": "2021 - 2024",
+                    "role": "Backend Software Developer",
+                    "achievements": "I developed and maintained high-impact projects, such as '<b>Samsung no Itaú</b>', an internal store within the Itaú app aimed at selling exclusive Samsung products. I worked on a complex backend, composed of several microservices written in Java and Kotlin, using hexagonal architecture and messaging communication.; Led the data integration with '<b>Itaú ​​Data Mesh</b>', creating an API data ingestion used by various teams in the ecosystem. The solution used AWS technologies, such as SQS, API Gateway, S3, ECS, Glue, AWS Athena, DynamoDB, KMS and AWS Lambda, implemented with Terraform and pipelines in GitHub Actions, resulting in a robust, scalable and high availability solution. ;I worked on the development project for the internal payments API '<b>\"Payments as a Service\" (PaaS)</b>' for Itaú, in a highly complex microservices, allowing the integrated use of multiple payment methods in a single transaction."
                 }
             }
         },
         "studies": {
             "title": "Studies",
             "institutions": {
-                "University of Jakarta": {
-                    "description": "Studied software engineering."
+                "UFU": {
+                    "name": "Universidade Federal de Uberlândia",
+                    "description": "Bachelors in Aeronautical engineering."
                 }
             }
         },

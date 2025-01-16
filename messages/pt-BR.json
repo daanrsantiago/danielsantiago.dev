@@ -2,6 +2,11 @@
     "person": {
         "role": "Desenvolvedor Backend"
     },
+    "newsletter": {
+        "title": "Subscribe to {firstName}'s Newsletter",
+        "description": "I occasionally write about design, technology, and share thoughts on the intersection of creativity and engineering",
+        "button": "Sign up"
+    },
     "home": {
         "label": "Início",
         "title": "Portfolio de {name}",
