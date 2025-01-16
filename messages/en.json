@@ -11,8 +11,9 @@
         "label": "Home",
         "title": "{name}'s Portfolio",
         "description": "Portfolio website showcasing my work as a {role}",
-        "headline": "Design engineer and builder",
-        "subline": "I'm Selene, a design engineer at FLY, where I craft intuitive user experiences. After hours, I build my own projects."
+        "headline": "Backend developer always doing his best",
+        "subline": "I'm Daniel Santiago, a software developer with extensive experience as a Backend Developer, focusing on technologies such as Java, Kotlin and Spring Framework, as well as distributed systems and microservices.",
+        "blogCall": "Latest from the blog"
     },
     "about": {
         "label": "About",

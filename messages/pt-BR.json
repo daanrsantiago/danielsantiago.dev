@@ -7,7 +7,8 @@
         "title": "Portfolio de {name}",
         "description": "Site de portifólio apresentando meu trabalho como {role}",
         "headline": "Desenvolvedor Backend sempre dando o seu melhor",
-        "subline": "I'm Selene, a design engineer at FLY, where I craft intuitive user experiences. After hours, I build my own projects."
+        "subline": "Eu sou o Daniel Santiago, um desenvolvedor de software com ampla experiência como Desenvolvedor Backend, com foco em tecnologias como Java, Kotlin e Spring Framework, além de sistemas distribuídos e microserviços.",
+        "blogCall": "Ultimos blog posts"
     },
     "about": {
         "label": "Sobre",

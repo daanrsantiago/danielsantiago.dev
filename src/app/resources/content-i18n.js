@@ -18,7 +18,7 @@ const createI18nContent = (t) => {
     }
 
     const newsletter = {
-        display: true,
+        display: false,
         title: <>{t("newsletter.title", {firstName: person.firstName})}</>,
         description: <>{t("newsletter.description")}</>
     }
@@ -48,7 +48,8 @@ const createI18nContent = (t) => {
         title: t("home.title", {name: person.name}),
         description: t("home.description", {role: person.role}),
         headline: <>{t("home.headline")}</>,
-        subline: <>{t("home.subline")}</>
+        subline: <>{t("home.subline")}</>,
+        blogCall: t("home.blogCall")
     }
 
     const about = {
