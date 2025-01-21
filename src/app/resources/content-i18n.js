@@ -65,7 +65,7 @@ const createI18nContent = (t) => {
             display: true
         },
         calendar: {
-            display: true,
+            display: false,
             link: 'https://cal.com'
         },
         intro: {
@@ -104,7 +104,7 @@ const createI18nContent = (t) => {
             })
         },
         technical: {
-            display: true, // set to false to hide this section
+            display: false, // set to false to hide this section
             title: t("about.technical.title"),
             skills: skills.map( skill => {
                 return {
