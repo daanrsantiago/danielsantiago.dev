@@ -11,7 +11,7 @@ If you work in software development, you've probably come across the concept of 
 
 An operation is considered idempotent when its repeated execution produces the same final state in the application, regardless of the number of times it is called. This does not mean that the response will always be the same, but rather that subsequent calls will not have additional side effects.
 
-For example, a <span style={{color: "#E74C3C "}}>DELETE</span> request on a resource in a REST API, if correctly implemented, should remove the resource on the first execution and return a status ** 204 No Content**. Subsequent calls must return a **404 Not Found**, as the resource no longer exists, keeping the application state unchanged after the first execution.
+For example, a <span style={{color: "#E74C3C "}}>DELETE</span> request on a resource in a REST API, if correctly implemented, should remove the resource on the first execution and return a status **204 No Content**. Subsequent calls must return a **404 Not Found**, as the resource no longer exists, keeping the application state unchanged after the first execution.
 
 Operations in REST APIs like <span style={{color: "#2ECC71"}}>GET</span>, <span style={{color: "#F39C12" }}>PUT</span>, <span style={{color: "#95A5A6"}}>HEAD</span> and <span style={{color: "#9B59B6" }}>OPTIONS</span>, if implemented correctly, should also be idempotent, while others like <span style={{color: "#3498DB"}}>POST</span> should not, as with each request it is expected that a new resource is created, generating side effects. 
 
