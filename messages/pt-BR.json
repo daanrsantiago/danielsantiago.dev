@@ -9,7 +9,7 @@
     },
     "home": {
         "label": "Início",
-        "title": "Portfolio de {name}",
+        "title": "{name}",
         "description": "Site de portifólio apresentando meu trabalho como {role}",
         "headline": "Desenvolvedor Backend sempre dando o seu melhor",
         "subline": "Eu sou o Daniel Santiago, um desenvolvedor de software com ampla experiência como Desenvolvedor Backend, com foco em tecnologias como Java, Kotlin e Spring Framework, além de sistemas distribuídos e microserviços.",
@@ -54,8 +54,8 @@
     },
     "blog": {
         "label": "Blog",
-        "title": "Writing about design and tech...",
-        "description": "Read what {name} has been up to recently"
+        "title": "Escrevendo sobre tecnologia...",
+        "description": "Leio o que {name} te feito recentemente"
     },
     "work": {
         "label": "Projetos",
