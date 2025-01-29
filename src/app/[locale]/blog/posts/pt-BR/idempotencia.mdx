@@ -1,0 +1,254 @@
+---
+title: "Idempotência: Importância e papel na construção de aplicações resilientes"
+publishedAt: "2025-01-29"
+summary: "Conhecer o conceito de idempotência é fundamental para qualquer desenvolvedor, vamos explorar isso juntos?"
+tag: "tecnologia"
+---
+
+Se você trabalha com desenvolvimento de software, provavelmente já se deparou com o conceito de idempotência. Mas o que ele significa e qual sua importância na construção de aplicações resilientes a falhas? Vamos explorar isso juntos!
+
+## O Conceito de Idempotência
+
+Uma operação é considerada idempotente quando sua execução repetida produz o mesmo estado final na aplicação, independentemente do número de vezes que for chamada. Isso não significa que a resposta será sempre a mesma, mas sim que chamadas subsequentes não terão efeitos colaterais adicionais.
+
+Por exemplo, uma requisição <span style={{color: "#E74C3C "}}>DELETE</span> em um recurso de uma API REST, se corretamente implementada, deve remover o recurso na primeira execução e retornar um status **204 No Content**. Já as chamadas subsequentes devem retornar um **404 Not Found**, pois o recurso já não existe, mantendo o estado da aplicação inalterado após a primeira execução.
+
+As operações em APIs REST como <span style={{color: "#2ECC71"}}>GET</span>, <span style={{color: "#F39C12" }}>PUT</span>, <span style={{color: "#95A5A6"}}>HEAD</span> e o <span style={{color: "#9B59B6" }}>OPTIONS</span>, se implementadas corretamente, também devem ser idempotentes, enquanto outras como <span style={{color: "#3498DB"}}>POST</span> não, pois a cada requisição é esperado que um novo recurso seja criado, gerando efeitos colaterais. 
+
+O método <span style={{color: "#F1C40F"}}>PATCH</span> no entanto é alvo de controvérsias quanto a presença ou não de idempotência. Como fica a critério do desenvolvedor atribuir o comportamento de cada chamada HTTP em uma API o que foi discutido nem sempre é a regra.
+
+## Qual a importância da Idempotência?
+
+Ao projetar sistemas resilientes a falhas pode ser necessário considerar estratégias de retentativa em alguns fluxos. Para isso, é importante que as operações efetuadas não levem a aplicação à estados inconsistentes. 
+
+Imagine ter recebido um erro ao realizar um pagamento e, ao tentar novamente, descobrir que o valor foi debitado da sua conta duas vezes? Ou então possuir uma aplicação que escuta as mensagens de uma fila utilizando o Amazon SQS, que pode ocasionalmente <a href={"https://docs.aws.amazon.com/pt_br/AWSSimpleQueueService/latest/SQSDeveloperGuide/standard-queues-at-least-once-delivery.html"} target={"_blank"} rel={"noopener noreferrer"}>entregar uma mensagem mais de uma vez</a>? É preciso ter certeza que é seguro realizar uma retentativa e é ai que entra a importância da idempotência!
+
+Ao chamar um método idempotente mais de uma vez não precisamos nos preocupar com estados inconsistentes gerados por retentativas, pois sabemos que não haverão efeitos colaterais nas chamadas subsequentes. Por isso é importante conhecer estratégias para implementação de idempotência mesmo em casos onde ela não é tida por padrão como no método POST que mencionamos anteriormente e é isso que abordaremos a seguir.
+
+## Implementando Idempotência
+
+Em alguns casos, pode ser necessário tornar um método POST idempotente.
+Não gostaríamos de criar mais de uma conta ao fazermos múltiplas requisições idênticas para o servidor, não é mesmo? 
+
+Existem alguns métodos que podem ser aplicados para tornar um método POST idempotente, como por exemplo o uso de uma **chave de idempotência**. A chave de idempotência é um campo que podemos adicionar no recurso e que deve ser preenchido com informações que tornam aquele recurso único. 
+
+No caso de criação de uma conta citado acima poderíamos usar o **CPF** como chave de idempotência. Para garantir que dois recursos não tenham a mesma chave de idempotência podemos criar uma regra na camada da aplicação ou então tornar aquele campo **único** na camada do banco de dados, evitando duplicações.
+
+Quando não temos um campo óbvio que torne aquele recurso único como no caso do CPF uma solução possível é o uso de uma **hash** do recurso criada com os valores dos campos de interesse que tornam o recurso único. Mas é preciso tomar cuidado quando utilizamos essa alternativa, pois é possível que haja <a href={"https://en.wikipedia.org/wiki/Hash_collision"} target={"_blank"} rel={"noopener noreferrer"}>colisões de hash</a>, impedindo a publicações de recursos mesmo que eles sejam diferentes.
+
+Quando a idempotência precisa ser garantida apenas por um intervalo determinado de tempo podemos usar um banco de dados em memória como o <a href={"https://redis.io/"} target={"_blank"} rel={"noopener noreferrer"}>redis</a> para armazenar a chave de idempotência, especificando um tempo de expiração para esse valor. Dessa forma temos menos chances de criar um problema devido á uma colisão de hash.
+
+## Exemplo em Kotlin com Spring
+
+Para exemplificar como é possível implementar as estratégias citadas criei um <a href={"https://github.com/daanrsantiago/idempotency-example"} target={"_blank"} rel={"noopener noreferrer"}>repositório no github</a> contendo o código de uma aplicação de exemplo em Kotlin utilizando Spring Boot 3.4.2. 
+
+### Executando o projeto
+
+O projeto é bem simples e para executa-lo basta ter instalado o <a href={"https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html"} target={"_blank"} rel={"noopener noreferrer"}>java na versão 21</a> e o <a href={"https://docs.docker.com/engine/install/"} target={"_blank"} rel={"noopener noreferrer"}>docker</a> e seguir as seguintes instruções:
+
+1. Clone o repositório
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: 'git clone https://github.com/daanrsantiago/idempotency-example',
+            label: 'git clone',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+2. Navegue até o diretório do projeto:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: 'cd idempotency-example',
+            label: 'cd para o diretório',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+3. Compile o projeto usando o gradle
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: './gradlew build',
+            label: 'compila a aplicação',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+4. Execute o docker compose
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: 'docker compose up',
+            label: 'sobe o redis',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+5. Execute a aplicação
+
+<CodeBlock className="my-23"
+    compact
+    codeInstances={[
+        {
+            code: 'java -jar build/libs/idempotency-example-0.0.1-SNAPSHOT.jar',
+            label: 'RedisConfig.kt',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+Após a inicialização podemos acessar <a href={"http://localhost:8080/swagger-ui.html"} target={"_blank"} rel={"noopener noreferrer"}>http://localhost:8080/swagger-ui.html</a> pelo navegador para começar a interagir com a aplicação via a interface do swagger-ui. 
+
+O resultado deve ser algo como o a seguir:
+
+![Pagina Swagger-UI.](/images/posts/idempotencia/swagger-ui.jpg)
+
+A partir daí fica simples interagir com os recursos da aplicação.
+
+## Implementação dos Recursos Publication e User
+
+A aplicação define dois recursos não relacionados: **Publication** e **User**. As suas representações no banco de dados são definidas pelos arquivos a seguir:
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `package dev.danielsantiago.idempotency.model
+
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType.AUTO
+import jakarta.persistence.Id
+import java.time.LocalDateTime
+
+@Entity
+data class Publication(
+    @Id
+    @GeneratedValue(strategy= AUTO)
+    var id: Long? = null,
+    var title: String,
+    var content: String,
+    val creationDate: LocalDateTime = LocalDateTime.now()
+)
+`,
+            label: 'Publication.kt',
+            language: 'kotlin'
+        },
+    ]}
+/>
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `package dev.danielsantiago.idempotency.model
+
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType.AUTO
+import jakarta.persistence.Id
+import jakarta.persistence.Table
+
+@Entity
+@Table(name = "users")
+data class User(
+    @Id
+    @GeneratedValue(strategy = AUTO)
+    var id: Long? = null,
+    val name: String,
+    val age: Int,
+    @Column(unique = true)
+    val cpf: String
+)
+
+`,
+            label: 'User.kt',
+            language: 'kotlin'
+        },
+    ]}
+/>
+
+Repare que o na definição da coluna **cpf** da classe **User** foi usado o parâmetro **unique=true**. Isso faz com que possa haver apenas usuários com valores de cpf distintos, na prática o cpf passa a atuar como uma **chave de idempotência**.
+
+Ao tentar salvar dois usuários com o mesmo valor de cpf é gerada uma exceção na camada de banco de dados, que o controller reconhece e retorna um erro 422 para o cliente.
+
+Agora vamos analisar o controller do recurso **Publication**
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `package dev.danielsantiago.idempotency.controller
+
+import ...
+
+@RestController
+@RequestMapping("/publication")
+class PublicationController(
+    val publicationRepository: PublicationRepository,
+    val template: RedisTemplate<String, String>
+) {
+    val PREFIX = "publication:idempotency:"
+
+    ...
+
+    @PostMapping()
+    fun publishPublication(@RequestBody body: PublicationRequest): ResponseEntity<Publication> {
+        val publishedPublication = publicationRepository.save(
+            Publication(
+                title = body.title,
+                content = body.content
+            )
+        )
+        return ResponseEntity.status(CREATED).body(publishedPublication)
+    }
+
+    @PostMapping("/idempotent")
+    fun eventualIdempotency(@RequestBody body: PublicationRequest): ResponseEntity<Publication> {
+        if(template.opsForValue().setIfAbsent(PREFIX + body.hashCode(), "1", Duration.ofMinutes(1))!!) {
+            val publishedPublication = publicationRepository.save(
+                Publication(
+                    title = body.title,
+                    content = body.content
+                )
+            )
+            return ResponseEntity.status(CREATED).body(publishedPublication)
+        } else {
+            return ResponseEntity.status(UNPROCESSABLE_ENTITY).build()
+        }
+    }
+    ...
+}
+`,
+            label: 'Publication.kt',
+            language: 'kotlin'
+        },
+    ]}
+/>
+
+Foram definidos dois mapeamentos **POST**, um no path **/publication** que permite duplicações, que portanto não é idempotente, e outro no path **/publication/idempotent**, que não permite duplicações durante um período de um minuto, e que portanto é idempotente nesse período.
+
+Quando a aplicação recebe uma requisição no path **/publication/idempotent** ela tenta armazenar um valor na chave "publication:idempotency:\{hashDaPublicação\}" com um período de expiração de 1 minuto em nossa instância do redis. Caso esse valor não exista, a aplicação cria esse valor e salva a publicação com sucesso, caso contrário a publicação não é salva e é retornado um status 422 para o cliente.
+
+Essa implementação permite que apenas publicações com informações diferentes possam ser criadas dentro de um período de 1 minuto, desde que não hajam colisões no hash criado. Isso pode ser interessante para fazer uma especíe de <a href={"https://www.freecodecamp.org/portuguese/news/debounce-como-atrasar-a-execucao-de-uma-funcao-em-javascript-exemplo-com-js-es6/"} target={"_blank"} rel={"noopener noreferrer"}>debounce</a> de uma requisição no servidor.
+
+# Conclusão
+
+A idempotência é um conceito fundamental para o desenvolvimento de aplicações confiáveis e resilientes. Ao garantir que operações repetidas não causem efeitos inesperados, podemos projetar sistemas mais robustos e seguros. Implementar idempotência exige planejamento e boas práticas, mas os benefícios em termos de consistência e confiabilidade fazem com que esse esforço valha a pena.

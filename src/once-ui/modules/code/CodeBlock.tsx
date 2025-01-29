@@ -9,11 +9,8 @@ import { Flex, Button, IconButton, DropdownWrapper } from '@/once-ui/components'
 
 import Prism from 'prismjs';
 import 'prismjs/plugins/line-highlight/prism-line-highlight';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-tsx';
 import 'prismjs/components/prism-kotlin';
+import 'prismjs/components/prism-bash';
 
 type CodeInstance = {
     code: string;
@@ -93,6 +90,16 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
                     zIndex={2}
                     fillWidth padding="8"
                     justifyContent="space-between">
+                    {codeInstances.length == 1 ? (
+                        <Flex
+                        position='relative'
+                        style={{
+                            left: 'var(--static-space-8)',
+                            right: 'var(--static-space-8)',
+                            top: 'var(--static-space-8)',
+                            fontWeight: 'bold'
+                        }}>{label}</Flex>
+                    ): <div/>}
                     {codeInstances.length > 1 ? (
                         <Flex>
                             <DropdownWrapper
