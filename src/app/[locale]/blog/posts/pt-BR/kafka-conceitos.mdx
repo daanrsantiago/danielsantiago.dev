@@ -1,0 +1,56 @@
+---
+title: "Kafka: Aprenda de uma vez por todas como funciona e como executar localmente"
+publishedAt: "2025-02-01"
+summary: "Conhecer o conceito de idempotência é fundamental para qualquer desenvolvedor, vamos explorar isso juntos?"
+tag: "tecnologia"
+---
+# Introdução
+
+Um dos pontos mais importantes quando vamos arquitetar sistemas distribuídos é sem dúvida definir como será feita a comunicação entre os componentes. 
+
+Quando o assunto é comunicação entre processos, precisamos pensar em aspectos como: 
+
+- A comunicação pode ser feita de forma **assíncrona**?
+- É necessário um **alto throughput**?
+- A mesma mensagem precisa ou pode ser **comunicada para componentes diferentes**?
+- Precisamos de **tolerância a falhas** durante o processamento da mensagem?
+
+Se a resposta para essas perguntas é sim, provavelmente a melhor opção à disposição é usar uma aplicação como o <a href={"https://kafka.apache.org/"}  target={"_blank"} rel={"noopener noreferrer"}>Apache Kafka</a> para intermediar a produção e consumo das mensagens entre os componentes do sistema. 
+
+O Kafka é uma **plataforma de streaming de eventos** que permite com que aplicações:
+
+1. **Publiquem** (escrevam) e **se inscrevam** (leiam) em streams de eventos.
+2. **Armazenem** streams de eventos de forma **durável** e **confiável**
+3. **Processem** streams de eventos **assim que eles acontecem** ou **de forma retrospectiva**
+
+O aspecto mais importante do Kafka é que ele faz isso de uma forma **escalável**, **distribuída**, **tolerante a falhas** e **segura**.
+
+Eu sei que à primeira vista todos esses termos podem ser confusos e que pode ser difícil estabelecer uma imagem clara de como todas essas peças se "encaixam". É importante reconhecer que o Kafka realmente é um componente complexo e entender como ele funciona com todos os detalhes necessários é uma tarefa difícil. 
+
+Nesse artigo eu vou dar o meu melhor para explicar da forma mais simples e completa possível seu funcionamento e no fim vamos conseguir criar e interagir com esse serviço localmente, dando nosso primeiro passo nessa jornada. Bora lá?
+
+# Eventos
+
+Anteriormente definimos o kafka como uma plataforma de streaming de eventos, mas o que exatamente são esses eventos? Um evento é um registro de algum acontecimento, a representação de um fato, também podem ser chamados de **mensagens** ou **registros** na documentação do kafka e é a menor unidade que um dado pode assumir nesse sistema. Quando interagimos com o Kafka fazemos isso lendo ou escrevendo eventos para ele. Uma propriedade importante de um evento é que ele pode ser visto como um registro em um **log**, ou seja, ele é persistente e imutável.
+
+Eventos no kafka tem três campos principais: uma **chave**, um **valor** e um **timestamp**. Além desses campos temos ainda headers opcionais para adicionar metadados. O dado a seguir é um exemplo de evento:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: `{
+    "key": "Daniel",
+    "value": "Entrou em sua conta",
+    "timestamp": "2025 8:52:32 AM GMT-03:00"
+}`,
+            label: 'example event',
+            language: 'json'
+        },
+    ]}
+    copyButton
+/>
+
+# Brokers, Tópicos e Partições
+
+Na arquitetura do Apache Kafka um broker é uma aplicação 
