@@ -1,9 +1,13 @@
 ---
 title: "Kafka: Aprenda de uma vez por todas como funciona e como executar localmente"
 publishedAt: "2025-02-01"
+image: "/images/posts/kafka-conceitos/kafka-logo.jpg"
 summary: "Conhecer o conceito de idempotência é fundamental para qualquer desenvolvedor, vamos explorar isso juntos?"
 tag: "tecnologia"
 ---
+
+![Cover foto.](/images/posts/kafka-conceitos/kafka-logo.jpg)
+
 # Introdução
 
 Um dos pontos mais importantes quando vamos arquitetar sistemas distribuídos é sem dúvida definir como será feita a comunicação entre os componentes. 
@@ -31,7 +35,9 @@ Nesse artigo eu vou dar o meu melhor para explicar da forma mais simples e compl
 
 # Eventos
 
-Anteriormente definimos o kafka como uma plataforma de streaming de eventos, mas o que exatamente são esses eventos? Um evento é um registro de algum acontecimento, a representação de um fato, também podem ser chamados de **mensagens** ou **registros** na documentação do kafka e é a menor unidade que um dado pode assumir nesse sistema. Quando interagimos com o Kafka fazemos isso lendo ou escrevendo eventos para ele. Uma propriedade importante de um evento é que ele pode ser visto como um registro em um **log**, ou seja, ele é persistente e imutável.
+Anteriormente definimos o kafka como uma plataforma de streaming de eventos, mas o que exatamente são esses eventos? Um evento é um registro de algum acontecimento, a representação de um fato, também podem ser chamados de **mensagens** ou **registros** na documentação do kafka
+
+Quando interagimos com o Kafka fazemos isso lendo ou escrevendo eventos para ele. Uma propriedade importante de um evento é que ele pode ser visto como um registro em um **log**, ou seja, ele é persistente e imutável.
 
 Eventos no kafka tem três campos principais: uma **chave**, um **valor** e um **timestamp**. Além desses campos temos ainda headers opcionais para adicionar metadados. O dado a seguir é um exemplo de evento:
 
@@ -51,6 +57,18 @@ Eventos no kafka tem três campos principais: uma **chave**, um **valor** e um *
     copyButton
 />
 
-# Brokers, Tópicos e Partições
+# Brokers
 
-Na arquitetura do Apache Kafka um broker é uma aplicação 
+O Apache Kafka foi desenvolvido para atuar como um **cluster**, isso é, coordenando diversos **nós** executando a aplicação para garantir tolerância a falhas e escalabilidade. Dessa forma é possível escalar o cluster horizontalmente adicionando novos nós caso seja necessário um aumento na performance, ou então adicionar mais garantias de redundância, ja que se um dos nós falharem ele é capaz de acionar outro nó para atuar em seu lugar.
+
+Na forma mais tradicional de operar um cluster de Apache Kafka é necessário instanciar uma aplicação extra separadamente chamada <a href={"https://zookeeper.apache.org/"} target={"_blank"} rel={"noopener noreferrer"}>Apache ZooKeeper</a>. Esse componente fica responsável principalmente por realizar um conscenso entre os nós do cluster sobre quem serão os líderes de cada partição e gerenciar os metadados do cluster.
+
+No entando a partir da versão <a href={"https://www.confluent.io/blog/apache-kafka-3-3-0-new-features-and-updates/"} target={"_blank"} rel={"noopener noreferrer"}>3.3</a> o Kafka da a possibilidade de utilizar o <a href={"https://developer.confluent.io/learn/kraft/"} target={"_blank"} rel={"noopener noreferrer"}>KRaft</a> como protocolo de consenso. Essa opção elimina a necessidade de instanciar uma aplicação como o ZooKeeper separadamente pois a lógica já está inclusa no próprio Kafka, simplificando o processo de criar um cluster!
+
+Ao utilizar o KRaft, um nó de um cluster Kafka pode atuar em dois papeis distintos: como **broker** e/ou como um **controller**. Um broker é uma instância rodando Kafka que atua gerenciando eventos, já um controller atua armazenando metadados do cluster e realizando papeis de consenso entre os nós.
+
+# Tópicos e Partições
+
+Quando escrevemos e consumimos eventos do Kafka fazemos isso publicando e consumindo de **tópicos**. Essa abstração é como se fosse um  
+
+![Topics .](/images/posts/kafka-conceitos/topicos.jpg)
