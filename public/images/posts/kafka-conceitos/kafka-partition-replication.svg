@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="320mm"
+   height="180mm"
+   viewBox="0 0 320 180"
+   version="1.1"
+   id="svg1"
+   inkscape:export-filename="kafka-partition-replication.jpg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   sodipodi:docname="kafka-partition-replication.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:export-bgcolor="#ffffffff"
+     inkscape:zoom="0.72"
+     inkscape:cx="675"
+     inkscape:cy="301.38889"
+     inkscape:window-width="1918"
+     inkscape:window-height="1000"
+     inkscape:window-x="1913"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="ConcaveTriangle"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Concave triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.7)"
+         d="M -2,-4 9,0 -2,4 c 2,-2.33 2,-5.66 0,-8 z"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         id="path7" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Camada 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#f4f6f8;stroke:#000000;stroke-width:0.289663;fill-opacity:1"
+       id="rect1"
+       width="67.324364"
+       height="109.64779"
+       x="21.726295"
+       y="35.711422" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.76111px;font-family:Arial;-inkscape-font-specification:Arial;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#595959;fill-opacity:1;stroke:#000000;stroke-width:0.264583"
+       x="41.150932"
+       y="45.270424"
+       id="text2"><tspan
+         sodipodi:role="line"
+         id="tspan2"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.76111px;font-family:Arial;-inkscape-font-specification:Arial;fill:#595959;fill-opacity:1;stroke:none;stroke-width:0.264583"
+         x="41.150932"
+         y="45.270424">Broker 1</tspan></text>
+    <rect
+       style="fill:#23374b;fill-opacity:1;stroke:none;stroke-width:0.264129"
+       id="rect2"
+       width="57.41264"
+       height="24.657991"
+       x="26.49814"
+       y="56.676579" />
+    <rect
+       style="fill:#1f558b;fill-opacity:1;stroke:none;stroke-width:0.264129"
+       id="rect3"
+       width="57.41264"
+       height="24.657991"
+       x="26.49814"
+       y="84.646835" />
+    <rect
+       style="fill:#0055aa;fill-opacity:1;stroke:none;stroke-width:0.264129"
+       id="rect4"
+       width="57.41264"
+       height="24.657991"
+       x="26.682158"
+       y="112.98513" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.7611px;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="55.737122"
+       y="67.350548"
+       id="text4"><tspan
+         sodipodi:role="line"
+         id="tspan4"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="55.737122"
+         y="67.350548">Partição 0</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="55.737122"
+         y="77.051926"
+         id="tspan5">Líder</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.7611px;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="55.737122"
+       y="94.911308"
+       id="text7"><tspan
+         sodipodi:role="line"
+         id="tspan6"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="55.737122"
+         y="94.911308">Partição 1</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="55.737122"
+         y="104.61269"
+         id="tspan7">Seguidor</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.7611px;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="55.737122"
+       y="123.5745"
+       id="text9"><tspan
+         sodipodi:role="line"
+         id="tspan8"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="55.737122"
+         y="123.5745">Partição 2</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="55.737122"
+         y="133.27588"
+         id="tspan9">Seguidor</tspan></text>
+    <rect
+       style="fill:#f4f6f8;fill-opacity:1;stroke:#000000;stroke-width:0.289663"
+       id="rect9"
+       width="67.324364"
+       height="109.64779"
+       x="126.33781"
+       y="35.711422" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.76111px;font-family:Arial;-inkscape-font-specification:Arial;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#595959;fill-opacity:1;stroke:#000000;stroke-width:0.264583"
+       x="145.76245"
+       y="45.270424"
+       id="text10"><tspan
+         sodipodi:role="line"
+         id="tspan10"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.76111px;font-family:Arial;-inkscape-font-specification:Arial;fill:#595959;fill-opacity:1;stroke:none;stroke-width:0.264583"
+         x="145.76245"
+         y="45.270424">Broker 2</tspan></text>
+    <rect
+       style="fill:#23374b;fill-opacity:1;stroke:none;stroke-width:0.264129"
+       id="rect10"
+       width="57.41264"
+       height="24.657991"
+       x="131.29369"
+       y="56.676579" />
+    <rect
+       style="fill:#1f558b;fill-opacity:1;stroke:none;stroke-width:0.264129"
+       id="rect11"
+       width="57.41264"
+       height="24.657991"
+       x="131.29369"
+       y="84.646835" />
+    <rect
+       style="fill:#0055aa;fill-opacity:1;stroke:none;stroke-width:0.264129"
+       id="rect12"
+       width="57.41264"
+       height="24.657991"
+       x="131.29369"
+       y="112.98513" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.7611px;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="160.34865"
+       y="67.350548"
+       id="text13"><tspan
+         sodipodi:role="line"
+         id="tspan12"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="160.34865"
+         y="67.350548">Partição 0</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="160.34865"
+         y="77.051926"
+         id="tspan13">Seguidor</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.7611px;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="160.34865"
+       y="94.911308"
+       id="text15"><tspan
+         sodipodi:role="line"
+         id="tspan14"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="160.34865"
+         y="94.911308">Partição 1</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="160.34865"
+         y="104.61269"
+         id="tspan15">Lider</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.7611px;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="160.34865"
+       y="123.5745"
+       id="text17"><tspan
+         sodipodi:role="line"
+         id="tspan16"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="160.34865"
+         y="123.5745">Partição 2</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="160.34865"
+         y="133.27588"
+         id="tspan17">Seguidor</tspan></text>
+    <rect
+       style="fill:#f4f6f8;fill-opacity:1;stroke:#000000;stroke-width:0.289663"
+       id="rect17"
+       width="67.324364"
+       height="109.64779"
+       x="228.24829"
+       y="35.711422" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.76111px;font-family:Arial;-inkscape-font-specification:Arial;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#595959;fill-opacity:1;stroke:#000000;stroke-width:0.264583"
+       x="247.67293"
+       y="45.270424"
+       id="text18"><tspan
+         sodipodi:role="line"
+         id="tspan18"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.76111px;font-family:Arial;-inkscape-font-specification:Arial;fill:#595959;fill-opacity:1;stroke:none;stroke-width:0.264583"
+         x="247.67293"
+         y="45.270424">Broker 3</tspan></text>
+    <rect
+       style="fill:#23374b;fill-opacity:1;stroke:none;stroke-width:0.264129"
+       id="rect18"
+       width="57.41264"
+       height="24.657991"
+       x="233.20415"
+       y="56.676579" />
+    <rect
+       style="fill:#1f558b;fill-opacity:1;stroke:none;stroke-width:0.264129"
+       id="rect19"
+       width="57.41264"
+       height="24.657991"
+       x="233.20415"
+       y="84.646835" />
+    <rect
+       style="fill:#0055aa;fill-opacity:1;stroke:none;stroke-width:0.264129"
+       id="rect20"
+       width="57.41264"
+       height="24.657991"
+       x="233.20415"
+       y="112.98513" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.7611px;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="262.25912"
+       y="67.350548"
+       id="text21"><tspan
+         sodipodi:role="line"
+         id="tspan20"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="262.25912"
+         y="67.350548">Partição 0</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="262.25912"
+         y="77.051926"
+         id="tspan21">Seguidor</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.7611px;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="262.25912"
+       y="94.911308"
+       id="text23"><tspan
+         sodipodi:role="line"
+         id="tspan22"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="262.25912"
+         y="94.911308">Partição 1</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="262.25912"
+         y="104.61269"
+         id="tspan23">Seguidor</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.7611px;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="262.25912"
+       y="123.5745"
+       id="text25"><tspan
+         sodipodi:role="line"
+         id="tspan24"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="262.25912"
+         y="123.5745">Partição 2</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;text-anchor:middle;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="262.25912"
+         y="133.27588"
+         id="tspan25">Líder</tspan></text>
+    <path
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.452826;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ConcaveTriangle)"
+       d="m 83.96846,69.988114 45.02836,0"
+       id="path27"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.452826;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ConcaveTriangle)"
+       d="m 188.16645,97.271878 h 42.55983"
+       id="path28"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.452826;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ConcaveTriangle)"
+       d="M 233.57908,116.76029 H 191.01925"
+       id="path29"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.452826;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ConcaveTriangle)"
+       d="M 131.84962,97.271878 H 86.821264"
+       id="path30"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.458999;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ConcaveTriangle)"
+       d="m 233.0813,128.8833 h -24.16562 v 27.28377 H 107.83583 v -29.10268 l -20.917554,0"
+       id="path31"
+       sodipodi:nodetypes="cccccc" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.458999;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ConcaveTriangle)"
+       d="M 84.026582,59.228436 H 108.1922 l 0,-34.299595 h 101.07985 l 0,36.118505 h 20.91756"
+       id="path32"
+       sodipodi:nodetypes="cccccc" />
+  </g>
+</svg>
