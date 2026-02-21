@@ -1,24 +1,26 @@
 ---
 title: "Kafka com SSL: Protegendo a comunicação com o broker"
 publishedAt: "2026-02-21"
-image: "/images/posts/kafka-ssl/cover.png"
+image: "/images/posts/kafka-ssl/kafka-logo-configurando-TLS.png"
 summary: "Sua aplicação pode estar transmitindo dados sensíveis em texto puro pela rede sem você saber. Veja como configurar TLS no Kafka para proteger a comunicação em trânsito."
 tag: "tecnologia"
 ---
+
+![Cover foto.](/images/posts/kafka-ssl/kafka-logo-configurando-TLS.png)
 
 # Introdução
 
 No <a href={"/pt-BR/blog/kafka-conceitos"}>post anterior</a> exploramos os conceitos fundamentais do Apache Kafka e colocamos a mão na massa subindo um cluster local com Docker. Se você ainda não leu, recomendo conferir antes de continuar — vamos partir de onde paramos!
 
-Naquele setup, o broker expunha um listener completamente sem criptografia, o que é perfeito para aprender em ambiente local, mas representa um risco sério quando pensamos em produção. Em cenários reais, mensagens Kafka frequentemente carregam dados sensíveis como pedidos, transações financeiras e informações de usuários. Enviá-los pela rede sem nenhuma proteção é como enviar uma carta sem envelope — qualquer pessoa com acesso àquela rede pode ler o que está dentro.
+Naquele setup, o broker expunha um listener completamente sem criptografia, o que é prático e simples para aprender em um ambiente local, mas nada profissional quando pensamos em produção. Em cenários reais, mensagens Kafka frequentemente carregam dados sensíveis como pedidos, transações financeiras e informações de usuários. Enviá-los pela rede sem nenhuma proteção é como enviar uma carta sem envelope — qualquer pessoa com acesso àquela rede pode ler o que está dentro.
 
-Neste post vamos entender **por que** isso é perigoso, ver uma demonstração prática com o Wireshark e então configurar o Kafka para usar **TLS**, garantindo que a comunicação entre os clientes e o broker seja criptografada em trânsito. Todo o código está disponível no <a href={"https://github.com/daanrsantiago/kafka-ssl-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>repositório de exemplo</a> criado para acompanhar este post.
+Neste post vamos entender **por que** isso é perigoso fazendo uma demonstração prática de como um atacante poderia visualizar o conteúdo dessas mensagens e então configurar o Kafka para usar **TLS**, garantindo que a comunicação entre os clientes e o broker seja criptografada em trânsito. Todo o código está disponível no <a href={"https://github.com/daanrsantiago/kafka-ssl-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>repositório de exemplo</a> criado para acompanhar este post.
 
 # O risco de comunicar em texto puro
 
 Quando o Kafka opera sem criptografia, as mensagens trafegam pela rede exatamente como foram enviadas pelo produtor — em texto puro. Isso significa que qualquer processo com acesso ao tráfego de rede entre o cliente e o broker consegue interceptar e ler essas mensagens sem nenhuma dificuldade.
 
-Você pode estar pensando: "mas o meu cluster está dentro de uma VPC privada, quem vai conseguir acessar o tráfego interno?". O problema é que superfícies de ataque são mais amplas do que parecem. Um container comprometido na mesma rede Docker, um serviço com permissões excessivas na cloud ou um ataque à rede corporativa são cenários realistas que podem expor o tráfego interno.
+Você pode estar pensando: "mas o meu cluster está dentro de uma VPC privada, quem vai conseguir acessar o tráfego interno?". Essa é uma pergunta válida — um atacante raramente chega diretamente ao tráfego de rede. O perigo está nas cadeias de ataque: um serviço com permissões excessivas comprometido pode ser usado como ponto de apoio para escalar o acesso; um container com vulnerabilidade explorada pode se tornar a ponte para inspecionar o tráfego dos vizinhos na mesma rede Docker; uma credencial vazada pode abrir caminho para um movimento lateral dentro da VPC. A comunicação em texto puro não é a porta de entrada — ela é o que torna o estrago muito maior quando outra porta é arrombada.
 
 Ferramentas de análise de pacotes como o <a href={"https://www.wireshark.org/"} target={"_blank"} rel={"noopener noreferrer"}>Wireshark</a> permitem inspecionar o tráfego de rede em tempo real. Vamos ver na prática como ficam as suas mensagens Kafka sem criptografia.
 
@@ -28,7 +30,7 @@ A imagem abaixo mostra uma captura de tráfego feita com o Wireshark enquanto a 
 
 ![Captura do Wireshark mostrando mensagem Kafka em texto puro.](/images/posts/kafka-ssl/wireshark-man-in-the-middle-mensagem-descriptografada.png)
 
-Informações como chave, valor e metadados das mensagens ficam completamente expostos para qualquer um que capture o tráfego naquele segmento de rede. Quem quiser reproduzir essa situação pode clonar o <a href={"https://github.com/daanrsantiago/kafka-ssl-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>repositório de exemplo</a>, subir o broker com `docker compose up -d` e executar o produtor com a flag `--no-ssl`, que conecta ao listener sem criptografia na porta 9094.
+Informações como chave, valor e metadados das mensagens ficam completamente expostos para qualquer um que capture o tráfego naquele segmento de rede. Quem quiser reproduzir essa situação pode clonar o <a href={"https://github.com/daanrsantiago/kafka-ssl-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>repositório de exemplo</a>, seguir as instruções de configuração, subir o broker com `docker compose up -d` e executar o produtor com a flag `--no-ssl`, que conecta ao listener sem criptografia na porta 9094.
 
 Agora vamos aprender como resolver isso!
 
@@ -37,7 +39,7 @@ Agora vamos aprender como resolver isso!
 O TLS (Transport Layer Security) é o protocolo que o Kafka usa para proteger os dados em trânsito. Antes de colocarmos a mão na massa, vale entender alguns conceitos-chave:
 
 **Autoridade Certificadora (CA)**<br></br>
-A CA é a raiz de confiança do nosso setup. É um par de chaves cujo único propósito é assinar certificados. Quando o cliente recebe o certificado do broker, ele verifica se aquele certificado foi assinado por uma CA em quem ele confia. Em produção você usaria uma CA reconhecida (como a Let's Encrypt), mas para ambientes controlados é comum criar uma CA própria — é exatamente o que faremos aqui.
+A CA é a raiz de confiança do nosso setup. É um par de chaves cujo único propósito é assinar certificados. Quando o cliente recebe o certificado do broker, ele verifica se aquele certificado foi assinado por uma CA em quem ele confia. Em produção você poderia usar uma CA reconhecida (como a Let's Encrypt), mas para ambientes controlados é comum criar uma CA própria — é exatamente o que faremos aqui.
 
 **Keystore**<br></br>
 O keystore é o "documento de identidade" do broker. Ele armazena a **chave privada** do broker e o seu **certificado assinado pela CA**. O broker usa esses dados para provar sua identidade durante o handshake TLS.
@@ -192,21 +194,6 @@ keytool -import -noprompt \\
   -file     "$CREDS/ca-cert" \\
   -storepass "$PASSWORD"`,
             label: '4-create-client-truststore.sh',
-            language: 'bash'
-        },
-    ]}
-    copyButton
-/>
-
-Para executar os quatro scripts em sequência:
-
-<CodeBlock className="my-24"
-    compact
-    codeInstances={[
-        {
-            code: `chmod +x 1-create-ca.sh 2-create-server-keystore.sh 3-create-server-truststore.sh 4-create-client-truststore.sh
-./1-create-ca.sh && ./2-create-server-keystore.sh && ./3-create-server-truststore.sh && ./4-create-client-truststore.sh`,
-            label: 'terminal',
             language: 'bash'
         },
     ]}

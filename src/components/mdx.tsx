@@ -146,6 +146,7 @@ export function CustomMDX(props: CustomMDXProps) {
         // @ts-ignore: Suppressing type error for MDXRemote usage
         <MDXRemote
             {...props}
+            options={{ ...props.options, blockJS: false }}
             components={{ ...components, ...(props.components || {}) }}
         />
     );
