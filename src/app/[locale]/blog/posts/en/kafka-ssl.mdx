@@ -1,0 +1,374 @@
+---
+title: "Kafka with SSL: Securing communication with the broker"
+publishedAt: "2026-02-21"
+image: "/images/posts/kafka-ssl/kafka-logo-configurando-TLS-en.png"
+summary: "Your application may be transmitting sensitive data in plain text over the network without you knowing. See how to configure TLS in Kafka to protect communication in transit."
+tag: "technology"
+---
+
+![Cover foto.](/images/posts/kafka-ssl/kafka-logo-configurando-TLS-en.png)
+
+# Introduction
+
+In the <a href={"/en/blog/kafka-conceitos"}>previous post</a> we explored the fundamental concepts of Apache Kafka and got our hands dirty by spinning up a local cluster with Docker. If you haven't read it yet, I recommend checking it out before continuing — we'll pick up right where we left off!
+
+In that setup, the broker exposed a listener with absolutely no encryption, which is practical and straightforward for learning in a local environment, but far from professional when we think about production. In real scenarios, Kafka messages frequently carry sensitive data such as orders, financial transactions, and user information. Sending them over the network without any protection is like sending a letter without an envelope — anyone with access to that network can read what's inside.
+
+In this post we'll understand **why** this is dangerous by doing a hands-on demonstration of how an attacker could view the content of those messages, and then configure Kafka to use **TLS**, ensuring that communication between clients and the broker is encrypted in transit. All the code is available in the <a href={"https://github.com/daanrsantiago/kafka-ssl-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>example repository</a> created to accompany this post.
+
+# The risk of communicating in plain text
+
+When Kafka operates without encryption, messages travel over the network exactly as they were sent by the producer — in plain text. This means that any process with access to the network traffic between the client and the broker can intercept and read those messages without any difficulty.
+
+You might be thinking: "but my cluster is inside a private VPC, who's going to access the internal traffic?". That's a valid question — an attacker rarely gets direct access to network traffic. The danger lies in attack chains: a service with excessive permissions that gets compromised can be used as a foothold to escalate access; a container with an exploited vulnerability can become a bridge to inspect traffic from neighbors on the same Docker network; a leaked credential can open the way for lateral movement within the VPC. Plain text communication is not the entry point — it's what makes the damage so much greater when another door is broken down.
+
+Packet analysis tools like <a href={"https://www.wireshark.org/"} target={"_blank"} rel={"noopener noreferrer"}>Wireshark</a> allow you to inspect network traffic in real time. Let's see in practice what your Kafka messages look like without encryption.
+
+# Demonstration with Wireshark
+
+The image below shows a traffic capture made with Wireshark while the example application was sending messages to the broker **without** encryption enabled. Notice that it's possible to view the message content directly in the captured bytes:
+
+![Wireshark capture showing Kafka message in plain text.](/images/posts/kafka-ssl/wireshark-man-in-the-middle-mensagem-descriptografada.png)
+
+Information such as keys, values, and message metadata are completely exposed to anyone who captures traffic on that network segment. If you want to reproduce this situation, you can clone the <a href={"https://github.com/daanrsantiago/kafka-ssl-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>example repository</a>, follow the setup instructions, start the broker with `docker compose up -d`, and run the producer with the `--no-ssl` flag, which connects to the unencrypted listener on port 9094.
+
+Now let's learn how to fix this!
+
+# How TLS works in Kafka
+
+TLS (Transport Layer Security) is the protocol Kafka uses to protect data in transit. Before we get our hands dirty, it's worth understanding a few key concepts:
+
+**Certificate Authority (CA)**<br></br>
+The CA is the root of trust in our setup. It's a key pair whose sole purpose is to sign certificates. When the client receives the broker's certificate, it verifies whether that certificate was signed by a CA it trusts. In production you could use a recognized CA (such as Let's Encrypt), but for controlled environments it's common to create your own CA — which is exactly what we'll do here.
+
+**Keystore**<br></br>
+The keystore is the broker's "identity document". It stores the broker's **private key** and its **certificate signed by the CA**. The broker uses this data to prove its identity during the TLS handshake.
+
+**Truststore**<br></br>
+The truststore is the "list of trusted CAs". The Kotlin clients use a truststore that contains our CA's certificate. When the broker presents its certificate during the connection, the client verifies whether it was signed by a CA present in the truststore — if so, the connection is established; otherwise, it is rejected.
+
+In this setup we'll configure **one-way TLS**: only the broker presents a certificate and the clients verify it. Clients don't need to present their own certificate — we'll come back to this point in the conclusion.
+
+# Generating the credentials
+
+All credentials are generated by four bash scripts that must be executed **in order** from the repository root. Each one depends on the output of the previous one.
+
+## 1. Creating the CA
+
+The first script creates the CA key pair: `ca-key` is the private key (must be kept secret) and `ca-cert` is the public certificate, which will be distributed to the broker's and clients' truststores.
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `#!/usr/bin/env bash
+# Creates: kafka-creds/ca-key, kafka-creds/ca-cert
+set -euo pipefail
+
+PASSWORD=123456
+VALIDITY=3650
+CREDS=kafka-creds
+
+mkdir -p "$CREDS"
+
+MSYS_NO_PATHCONV=1 openssl req -new -x509 \\
+  -keyout "$CREDS/ca-key" \\
+  -out    "$CREDS/ca-cert" \\
+  -days   "$VALIDITY" \\
+  -passout pass:"$PASSWORD" \\
+  -subj "/CN=local-kafka-ca/OU=kafka/O=example/L=Local/ST=SP/C=BR"`,
+            label: '1-create-ca.sh',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+## 2. Creating the broker keystore
+
+The keystore is the broker's identity document. The process has four steps because `keytool` cannot directly import an externally signed certificate: first we generate a key pair inside the keystore, then we export a Certificate Signing Request (CSR), the CA signs the CSR, and finally we import the CA certificate and the signed certificate back into the keystore. The CA certificate must be imported first so that `keytool` can verify the chain.
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `#!/usr/bin/env bash
+# Creates: kafka-creds/server.keystore.jks
+# Requires: kafka-creds/ca-key, kafka-creds/ca-cert
+set -euo pipefail
+
+PASSWORD=123456
+VALIDITY=3650
+CREDS=kafka-creds
+
+# Generate a key pair inside the keystore
+keytool -genkey -noprompt \\
+  -keystore "$CREDS/server.keystore.jks" \\
+  -alias    localhost \\
+  -dname    "CN=localhost, OU=kafka, O=example, L=Local, ST=SP, C=BR" \\
+  -keyalg   RSA \\
+  -validity "$VALIDITY" \\
+  -storepass "$PASSWORD" \\
+  -keypass   "$PASSWORD"
+
+# Export a Certificate Signing Request from the keystore
+keytool -certreq -noprompt \\
+  -keystore "$CREDS/server.keystore.jks" \\
+  -alias    localhost \\
+  -file     "$CREDS/cert-file" \\
+  -storepass "$PASSWORD"
+
+# Sign the CSR with the CA, generating the broker certificate
+MSYS_NO_PATHCONV=1 openssl x509 -req \\
+  -CA    "$CREDS/ca-cert" \\
+  -CAkey "$CREDS/ca-key" \\
+  -in    "$CREDS/cert-file" \\
+  -out   "$CREDS/cert-signed" \\
+  -days  "$VALIDITY" \\
+  -CAcreateserial \\
+  -passin pass:"$PASSWORD"
+
+# Import the CA certificate so keytool can verify the chain
+keytool -import -noprompt \\
+  -keystore "$CREDS/server.keystore.jks" \\
+  -alias    CARoot \\
+  -file     "$CREDS/ca-cert" \\
+  -storepass "$PASSWORD"
+
+# Import the signed certificate, completing the keystore
+keytool -import -noprompt \\
+  -keystore "$CREDS/server.keystore.jks" \\
+  -alias    localhost \\
+  -file     "$CREDS/cert-signed" \\
+  -storepass "$PASSWORD"`,
+            label: '2-create-server-keystore.sh',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+## 3. Creating the broker truststore
+
+Although in this setup the broker doesn't need to verify clients, the `apache/kafka` Docker image requires `KAFKA_SSL_TRUSTSTORE_LOCATION` to point to a valid file — otherwise it will refuse to start. The broker's truststore only needs the CA certificate.
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `#!/usr/bin/env bash
+# Creates: kafka-creds/server.truststore.jks
+# Requires: kafka-creds/ca-cert
+set -euo pipefail
+
+PASSWORD=123456
+CREDS=kafka-creds
+
+keytool -import -noprompt \\
+  -keystore "$CREDS/server.truststore.jks" \\
+  -alias    CARoot \\
+  -file     "$CREDS/ca-cert" \\
+  -storepass "$PASSWORD"`,
+            label: '3-create-server-truststore.sh',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+## 4. Creating the client truststore
+
+The client truststore is used by the Kotlin applications to verify the broker's identity. When the broker presents its certificate during the TLS handshake, the client verifies whether it was signed by the CA in this truststore. If so, the connection is established — otherwise, it is rejected.
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `#!/usr/bin/env bash
+# Creates: kafka-creds/client.truststore.jks
+# Requires: kafka-creds/ca-cert
+set -euo pipefail
+
+PASSWORD=123456
+CREDS=kafka-creds
+
+keytool -import -noprompt \\
+  -keystore "$CREDS/client.truststore.jks" \\
+  -alias    CARoot \\
+  -file     "$CREDS/ca-cert" \\
+  -storepass "$PASSWORD"`,
+            label: '4-create-client-truststore.sh',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+> **Note for Windows / Git Bash:** Git Bash automatically converts strings that look like Unix paths into Windows paths, which breaks the `-subj` argument passed to `openssl`. The scripts work around this by prefixing `openssl` calls with `MSYS_NO_PATHCONV=1`, disabling path conversion for that specific command.
+
+# Configuring the broker
+
+With the credentials generated in `kafka-creds/`, we can configure the broker. The `docker-compose.yaml` below mounts that directory into the container and sets the necessary environment variables for SSL:
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `version: '3.5'
+services:
+  broker:
+    image: apache/kafka:3.9.0
+    volumes:
+      - ./kafka-creds:/etc/kafka/secrets
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:SSL,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://broker:9093,EXTERNAL://localhost:9092,PLAINTEXT_HOST://localhost:9094'
+      KAFKA_LISTENERS: 'CONTROLLER://:29093,INTERNAL://:9093,EXTERNAL://:9092,PLAINTEXT_HOST://:9094'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:29093'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_SSL_KEYSTORE_LOCATION: '/etc/kafka/secrets/server.keystore.jks'
+      KAFKA_SSL_KEYSTORE_PASSWORD: '123456'
+      KAFKA_SSL_KEY_PASSWORD: '123456'
+      KAFKA_SSL_TRUSTSTORE_LOCATION: '/etc/kafka/secrets/server.truststore.jks'
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: '123456'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_NUM_PARTITIONS: 9
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8080:8080"
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'`,
+            label: 'docker-compose.yaml',
+            language: 'yaml'
+        },
+    ]}
+    copyButton
+/>
+
+The central point is the `KAFKA_LISTENER_SECURITY_PROTOCOL_MAP` variable. It defines the security protocol for each listener:
+
+- `CONTROLLER:PLAINTEXT` and `INTERNAL:PLAINTEXT` — internal cluster traffic, which remains unencrypted within the Docker network
+- **`EXTERNAL:SSL`** — listener to which external clients connect, now protected by TLS on port 9092
+- `PLAINTEXT_HOST:PLAINTEXT` — unencrypted listener on port 9094, kept for demonstration purposes (like the Wireshark capture we made earlier)
+
+The SSL variables point to the credentials mounted at `/etc/kafka/secrets`:
+
+<a href={"https://kafka.apache.org/documentation/#brokerconfigs_ssl.keystore.location"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_SSL_KEYSTORE_LOCATION</a><br></br>
+Path to the broker's keystore inside the container, which contains the private key and the signed certificate.
+
+<a href={"https://kafka.apache.org/documentation/#brokerconfigs_ssl.keystore.password"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_SSL_KEYSTORE_PASSWORD</a><br></br>
+Password to open the keystore file.
+
+<a href={"https://kafka.apache.org/documentation/#brokerconfigs_ssl.key.password"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_SSL_KEY_PASSWORD</a><br></br>
+Password for the private key entry within the keystore.
+
+<a href={"https://kafka.apache.org/documentation/#brokerconfigs_ssl.truststore.location"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_SSL_TRUSTSTORE_LOCATION</a><br></br>
+Path to the broker's truststore, required by the Docker image even when mTLS is disabled.
+
+<a href={"https://kafka.apache.org/documentation/#brokerconfigs_ssl.truststore.password"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_SSL_TRUSTSTORE_PASSWORD</a><br></br>
+Password to open the truststore file.
+
+Now we can start the broker:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: `docker compose up -d`,
+            label: 'terminal',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+# Configuring the Kotlin clients
+
+To accompany this post we created an <a href={"https://github.com/daanrsantiago/kafka-ssl-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>example project in Kotlin</a> with a producer and a consumer that communicate with the broker via SSL. If you want to understand how to create a producer and consumer from scratch, the <a href={"/en/blog/kafka-conceitos"}>previous post</a> covers those concepts in detail.
+
+The good news is that enabling SSL in Kafka clients requires only **three additional properties**. Both the `OrderProducer` and `OrderConsumer` in the example project receive these properties in their `Properties` object:
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `// Producer (OrderProducer.kt)
+props["bootstrap.servers"]       = "localhost:9092"
+props["security.protocol"]       = "SSL"
+props["ssl.truststore.location"] = "./kafka-creds/client.truststore.jks"
+props["ssl.truststore.password"] = "123456"
+props["key.serializer"]          = "org.apache.kafka.common.serialization.StringSerializer"
+props["value.serializer"]        = "dev.danielsantiago.kafka.ssl.example.config.serializer.OrderSerializer"
+
+// Consumer (OrderConsumer.kt)
+props.setProperty("bootstrap.servers",  "localhost:9092")
+props["security.protocol"]       = "SSL"
+props["ssl.truststore.location"] = "./kafka-creds/client.truststore.jks"
+props["ssl.truststore.password"] = "123456"
+props.setProperty("group.id",           "test")
+props.setProperty("key.deserializer",   "org.apache.kafka.common.serialization.StringDeserializer")
+props.setProperty("value.deserializer", "dev.danielsantiago.kafka.ssl.example.config.deserializer.OrderDeserializer")`,
+            label: 'Kotlin',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+<a href={"https://kafka.apache.org/documentation/#security.protocol"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>security.protocol</a><br></br>
+Instructs the Kafka client to use TLS when connecting to the broker. Without this property, the client would try to connect in plaintext even if the broker requires SSL.
+
+<a href={"https://kafka.apache.org/documentation/#ssl.truststore.location"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>ssl.truststore.location</a><br></br>
+Path to the `client.truststore.jks` generated by script 4. The client uses this file to verify that the certificate presented by the broker was signed by our CA. The path is relative to the working directory, so always run the JARs from the repository root.
+
+<a href={"https://kafka.apache.org/documentation/#ssl.truststore.password"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>ssl.truststore.password</a><br></br>
+Password to open the client truststore.
+
+# Building and running
+
+With the broker up and the credentials generated, we can build the project and run the clients. Both JARs must be run from the repository root, since the truststore path is relative to the working directory:
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `# Build both fat JARs
+./gradlew build
+
+# In one terminal — start the consumer
+java -jar build/libs/consumer.jar
+
+# In another terminal — run the producer (sends 5 orders)
+java -jar build/libs/producer.jar`,
+            label: 'terminal',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+The producer also accepts the `--no-ssl` flag to connect to the unencrypted listener on port 9094, which was used to generate the Wireshark capture we saw at the beginning of the post:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: `java -jar build/libs/producer.jar --no-ssl`,
+            label: 'terminal',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+A Kafka web UI is also available at <a href={"http://localhost:8080"} target={"_blank"} rel={"noopener noreferrer"}>http://localhost:8080</a> to inspect topics and messages.
+
+# Conclusion
+
+See what happens when we repeat the Wireshark capture after configuring SSL — the same traffic that previously appeared in plain text is now completely encrypted:
+
+![Wireshark capture showing Kafka traffic encrypted with TLS.](/images/posts/kafka-ssl/wireshark-man-in-the-middle-mensagem-criptografada.png)
+
+In this post we saw how an attacker with network access can intercept plain text Kafka messages and learned how to protect that traffic by configuring TLS on the broker and the clients. The setup we built uses **one-way TLS**: only the broker presents a certificate and the clients verify it, but the clients don't need to prove their own identity.
+
+There's a way to go further: **mTLS (mutual TLS)**. In this approach, clients also need to present a certificate signed by the CA, ensuring that only authorized applications can connect to the broker — even if someone gains access to the network. This adds an extra authentication layer that's important in multi-tenant environments or those with stricter security requirements. That will be the topic of a future post!
