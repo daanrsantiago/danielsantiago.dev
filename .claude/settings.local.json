@@ -3,7 +3,10 @@
     "allow": [
       "Bash(ls:*)",
       "Bash(grep:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "WebFetch(domain:www.linkedin.com)",
+      "Bash(cd /c/Users/daanr/Documents/repositorios_git/danielsantiago.dev && npm run lint 2>&1)",
+      "Bash(node:*)"
     ]
   }
 }

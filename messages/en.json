@@ -27,6 +27,11 @@
         "work": {
             "title": "Work Experience",
             "experiences": {
+                "Wisebyte": {
+                    "timeframe": "2025 - Present",
+                    "role": "Senior Back-End Developer",
+                    "achievements": "Worked as a back-end developer on a billing system for distributed energy generation, contributing from invoice processing to infrastructure modernization and financial integrations.;Modernized the deploy infrastructure by migrating from manually accessed EC2 to an ECS cluster with automated GitHub Actions pipelines and securely managed secrets.;Migrated applications to native compilation with '<b>GraalVM (Quarkus Native)</b>', reducing RAM usage and cloud operational costs.;Implemented billing integrations with Brazilian banks via event-driven microservices with '<b>Kafka</b>'.;Developed invoice processing flows and REST APIs using '<b>Java 21</b>' and '<b>Quarkus</b>'.;Implemented an observability stack with '<b>Grafana Loki</b>', '<b>Prometheus</b>', and '<b>Grafana Alloy</b>', centralizing logs and metrics from all services and Kafka brokers.;Spread a testing culture within the team, establishing unit and integration testing practices adopted across multiple platform applications."
+                },
                 "Zup": {
                     "timeframe": "2021 - 2024",
                     "role": "Backend Software Developer",

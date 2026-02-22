@@ -1,6 +1,6 @@
 import { InlineCode } from "@/once-ui/components";
 
-const workExperiences = ["Zup"]
+const workExperiences = ["Wisebyte", "Zup"]
 const studiesInsitutions = ["UFU"]
 const skills = ["Figma"]
 
