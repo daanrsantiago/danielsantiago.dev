@@ -26,8 +26,24 @@ type CodeBlockProps = {
     codePreview?: ReactNode;
     copyButton?: boolean;
     compact?: boolean;
+    wrapLines?: boolean;
     className?: string;
     style?: React.CSSProperties;
+};
+
+const renderJWT = (code: string) => {
+    const parts = code.split('.');
+    if (parts.length !== 3) return <>{code}</>;
+    const dotStyle: React.CSSProperties = { color: 'var(--code-gray)' };
+    return (
+        <>
+            <span style={{ color: 'var(--code-orange)' }}>{parts[0]}</span>
+            <span style={dotStyle}>.</span>
+            <span style={{ color: 'var(--code-violet)' }}>{parts[1]}</span>
+            <span style={dotStyle}>.</span>
+            <span style={{ color: 'var(--code-aqua)' }}>{parts[2]}</span>
+        </>
+    );
 };
 
 const CodeBlock: React.FC<CodeBlockProps> = ({
@@ -36,6 +52,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
     codePreview,
     copyButton = true,
     compact = false,
+    wrapLines = false,
     className,
     style,
 }) => {
@@ -48,10 +65,10 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
     const [copyIcon, setCopyIcon] = useState<string>('clipboard');
 
     useEffect(() => {
-        if (codeRef.current && codeInstances.length > 0) {
+        if (codeRef.current && codeInstances.length > 0 && language !== 'jwt') {
             Prism.highlightAll();
         }
-    }, [code, codeInstances.length]);
+    }, [code, language, codeInstances.length]);
 
     const handleCopy = () => {
         if (codeInstances.length > 0) {
@@ -174,12 +191,12 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
                     <pre
                         data-line={highlight}
                         ref={preRef}
-                        className={`${styles.pre} language-${language}`}
+                        className={`${styles.pre} ${wrapLines ? styles.preWrap : ''}${language !== 'jwt' ? ` language-${language}` : ''}`}
                         tabIndex={-1}>
                         <code
                             ref={codeRef}
-                            className={`${styles.code} ${`language-${language}`}`}>
-                            {code}
+                            className={`${styles.code}${language !== 'jwt' ? ` language-${language}` : ''}`}>
+                            {language === 'jwt' ? renderJWT(code) : code}
                         </code>
                     </pre>
                 </Flex>

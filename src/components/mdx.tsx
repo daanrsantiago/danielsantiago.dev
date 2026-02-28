@@ -1,5 +1,6 @@
 import { MDXRemote, MDXRemoteProps } from 'next-mdx-remote/rsc';
 import React, { ReactNode } from 'react';
+import remarkGfm from 'remark-gfm';
 
 import { SmartImage, SmartLink, Text } from '@/once-ui/components';
 import { CodeBlock } from '@/once-ui/modules';
@@ -146,7 +147,7 @@ export function CustomMDX(props: CustomMDXProps) {
         // @ts-ignore: Suppressing type error for MDXRemote usage
         <MDXRemote
             {...props}
-            options={{ ...props.options, blockJS: false }}
+            options={{ ...props.options, blockJS: false, mdxOptions: { remarkPlugins: [remarkGfm], ...((props.options as any)?.mdxOptions) } }}
             components={{ ...components, ...(props.components || {}) }}
         />
     );

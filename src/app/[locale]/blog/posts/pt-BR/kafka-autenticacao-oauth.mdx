@@ -1,0 +1,382 @@
+---
+title: "Kafka: Autenticação com OAuth e Keycloak"
+publishedAt: "2026-02-28"
+image: "/images/posts/kafka-autenticacao-oauth/cover.jpg"
+summary: "TLS protege o canal, mas qualquer cliente ainda pode se conectar. Veja como adicionar identidade verificável ao Kafka com SASL/OAUTHBEARER e Keycloak."
+tag: "tecnologia"
+---
+
+![Kafka logo.](/images/posts/kafka-autenticacao-oauth/cover.jpg)
+
+# Introdução
+
+No <a href={"/pt-BR/blog/kafka-ssl"}>post anterior</a> configuramos o Kafka com TLS, garantindo que os dados trafegam criptografados entre clientes e broker. Agora, qualquer tentativa de interceptar o tráfego encontra apenas ruído cifrado.
+
+Mas isso resolve apenas metade do problema. TLS protege **o que** é transmitido; precisamos agora controlar **quem** pode se conectar. Com o setup atual, qualquer serviço que tenha acesso de rede ao broker consegue produzir mensagens, consumir dados e potencialmente injetar eventos maliciosos — mesmo sem conseguir ler o conteúdo de outras conexões.
+
+Neste post vamos configurar **autenticação** no Kafka usando **SASL/OAUTHBEARER** com o <a href={"https://www.keycloak.org/"} target={"_blank"} rel={"noopener noreferrer"}>Keycloak</a> como servidor de autorização OAuth 2.0. Todo o código está disponível no <a href={"https://github.com/daanrsantiago/kafka-sasl-oauth-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>repositório de exemplo</a> criado para acompanhar este post.
+
+# Por que autenticação é importante no Kafka?
+
+O Kafka funciona como um hub central de eventos em muitas arquiteturas de microsserviços. Mensagens de pedidos, transações financeiras, dados de usuários e logs de auditoria passam por ele o tempo todo. Sem autenticação, qualquer serviço com acesso à rede do broker pode:
+
+- **Produzir eventos falsos** em qualquer tópico — um serviço comprometido pode injetar pedidos fraudulentos, acionar workflows indevidos ou corromper o estado de outros sistemas
+- **Consumir dados sensíveis** de tópicos que não deveria acessar — um container com vulnerabilidade pode virar um ponto de exfiltração de dados
+- **Fazer spoofing de producers** — enviar mensagens se passando por outro serviço, quebrando rastreabilidade e trilhas de auditoria
+
+A defesa em profundidade que estamos construindo ao longo desta série tem três camadas: **criptografia** (TLS, que já configuramos), **autenticação** (quem você é — este post) e **autorização** (o que você pode fazer — próximo post, com ACLs).
+
+# O que é OAuth 2.0?
+
+OAuth 2.0 é um protocolo de autorização que permite que aplicações obtenham tokens de acesso de forma segura. No contexto do Kafka, usamos o **Client Credentials Flow** — um fluxo machine-to-machine, sem usuário humano envolvido.
+
+O fluxo funciona assim:
+
+1. A aplicação (producer ou consumer) se autentica no servidor OAuth usando `client_id` e `client_secret`
+2. O servidor OAuth retorna um **JWT** (JSON Web Token) assinado com sua chave privada
+3. A aplicação apresenta esse JWT ao Kafka como prova de identidade
+
+**JWT — JSON Web Token**
+
+Um JWT tem três partes separadas por ponto: `header.payload.signature`. O header indica o algoritmo de assinatura; o payload carrega as *claims* — informações como `iss` (quem emitiu), `aud` (para quem é destinado), `exp` (quando expira) e `sub` (o sujeito, a identidade da aplicação). A signature é calculada pelo servidor OAuth com sua chave privada, garantindo que ninguém adulterou o token.
+
+**JWKS — JSON Web Key Set**
+
+Para validar a assinatura do JWT sem precisar consultar o servidor OAuth a cada mensagem, o broker Kafka busca as **chaves públicas** do servidor via um endpoint JWKS. Essas chaves ficam em cache: o broker valida cada token localmente, de forma offline. Isso é importante para a performance — a autenticação não adiciona uma chamada de rede extra por mensagem produzida ou consumida.
+
+**Por que OAuth para o Kafka?**
+
+Comparado a credenciais estáticas (usuário/senha com SASL/PLAIN ou SCRAM), o OAuth traz vantagens importantes:
+
+- **Identidades centralizadas**: um único servidor de identidade para todos os serviços — rotacionar credenciais de um serviço não exige reconfigurar o broker
+- **Tokens com expiração curta**: se um token for capturado, ele expira automaticamente
+- **Sem reinicialização do broker**: novas credenciais de clientes não exigem reconfiguração no broker
+- **Integração com IAM corporativo**: Keycloak, Auth0, Okta — o Kafka vira mais um cliente do seu provedor de identidade existente
+
+# Como funciona o SASL/OAUTHBEARER no Kafka
+
+SASL (Simple Authentication and Security Layer) é um framework de autenticação usado pelo Kafka. OAUTHBEARER é o mecanismo SASL que usa JWTs como tokens bearer.
+
+O fluxo completo tem três fases:
+
+![Diagrama de sequência mostrando o fluxo de autenticação SASL/OAUTHBEARER entre Produtor/Consumidor, Keycloak e Broker Kafka.](https://mermaid.ink/img/c2VxdWVuY2VEaWFncmFtCiAgICBwYXJ0aWNpcGFudCBDIGFzIFByb2R1dG9yL0NvbnN1bWlkb3IKICAgIHBhcnRpY2lwYW50IEtDIGFzIEtleWNsb2FrCiAgICBwYXJ0aWNpcGFudCBCIGFzIEJyb2tlciBLYWZrYQoKICAgIE5vdGUgb3ZlciBCLEtDOiBJbmljaWFsaXphY2FvIGRvIGJyb2tlcgogICAgQi0+PktDOiBHRVQgL2NlcnRzIC0gYnVzY2EgY2hhdmVzIEpXS1MgcHVibGljYXMKICAgIEtDLS0+PkI6IENoYXZlcyBKV0tTIGVtIGNhY2hlCgogICAgTm90ZSBvdmVyIEMsS0M6IDEuIE9idGVuY2FvIGRvIHRva2VuIC0gQ2xpZW50IENyZWRlbnRpYWxzIEZsb3cKICAgIEMtPj5LQzogUE9TVCAvdG9rZW4gLSBjbGllbnRfaWQ9a2Fma2EtY2xpZW50LCBjbGllbnRfc2VjcmV0CiAgICBLQy0tPj5DOiBKV1QgYXNzaW5hZG8gLSBhdWQ9a2Fma2EtYnJva2VyCgogICAgTm90ZSBvdmVyIEMsQjogMi4gSGFuZHNoYWtlIFNBU0wvT0FVVEhCRUFSRVIKICAgIEMtPj5COiBTYXNsSGFuZHNoYWtlIC0gbWVjaGFuaXNtPU9BVVRIQkVBUkVSCiAgICBCLS0+PkM6IE9LCiAgICBDLT4+QjogU2FzbEF1dGhlbnRpY2F0ZSAtIEpXVAogICAgTm90ZSBvdmVyIEI6IFZhbGlkYSBhc3NpbmF0dXJhIGNvbSBKV0tTCiAgICBOb3RlIG92ZXIgQjogVmVyaWZpY2EgYXVkLCBpc3MgZSBleHAKICAgIEItLT4+QzogQXV0ZW50aWNhZG8KCiAgICBOb3RlIG92ZXIgQyxCOiAzLiBQcm9kdXppciAvIENvbnN1bWlyCiAgICBDLT4+QjogUHJvZHVjZSAvIEZldGNoCiAgICBCLS0+PkM6IEFDSyAvIFJlY29yZHM=)
+
+**Inicialização do broker:** ao subir, o broker busca as chaves públicas do Keycloak via endpoint JWKS e as mantém em cache. Toda validação de token que acontecer depois usará essas chaves localmente.
+
+**Obtenção do token (Client Credentials Flow):** antes de conectar ao broker, o producer ou consumer chama o endpoint `/token` do Keycloak com `client_id` e `client_secret`. O Keycloak retorna um JWT assinado com `aud=kafka-broker` no payload — indicando que o token foi emitido especificamente para ser apresentado ao broker.
+
+**Handshake SASL/OAUTHBEARER:** o cliente anuncia que quer usar OAUTHBEARER, o broker confirma, e então o cliente envia o JWT. O broker valida:
+
+- **Assinatura**: usando a chave pública JWKS em cache — garante que o token não foi adulterado
+- **`aud`**: deve conter `kafka-broker` — impede que tokens emitidos para outros serviços funcionem aqui
+- **`iss`**: verifica que o token veio do issuer esperado — rejeita tokens de outros realms ou servidores
+- **`exp`**: rejeita tokens expirados
+
+Se todas as validações passarem, a conexão é estabelecida e o cliente pode produzir e consumir normalmente.
+
+# Configurando o ambiente
+
+## 1. Subindo o Keycloak
+
+O Keycloak precisa estar configurado antes do broker, pois o broker vai buscar as chaves JWKS na inicialização. Suba-o primeiro:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: `docker compose up keycloak -d`,
+            label: 'terminal',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+O console de administração estará disponível em <a href={"http://localhost:8082"} target={"_blank"} rel={"noopener noreferrer"}>http://localhost:8082</a>. Faça login com `admin` / `admin`.
+
+## 2. Configurando o Keycloak
+
+### 2.1 Criando o realm `kafka-example`
+
+No menu superior esquerdo, clique em **Manage realms** → **Create realm**.
+
+![Criar realm no Keycloak.](/images/posts/kafka-autenticacao-oauth/01-create-realm.png)
+
+- **Realm name:** `kafka-example`
+- Clique em **Create**
+
+![Configuração do nome do realm.](/images/posts/kafka-autenticacao-oauth/02-realm-name.png)
+
+### 2.2 Criando o client `kafka-broker`
+
+Este client representa o próprio broker Kafka. Ele precisa de credenciais para autenticar suas conexões internas com o Keycloak e buscar tokens para uso interno.
+
+No menu lateral, vá em **Clients** → **Create client**.
+
+![Criar client no Keycloak.](/images/posts/kafka-autenticacao-oauth/03-create-client.png)
+
+**Página 1 — General Settings:**
+- **Client type:** OpenID Connect
+- **Client ID:** `kafka-broker`
+- Clique em **Next**
+
+![Configurações gerais do kafka-broker.](/images/posts/kafka-autenticacao-oauth/04-kafka-broker-general.png)
+
+**Página 2 — Capability config:**
+- **Client authentication:** ON
+- Desmarque **Standard flow**
+- Marque **Service accounts roles**
+- Clique em **Next** → **Save**
+
+![Configuração de capabilities do kafka-broker.](/images/posts/kafka-autenticacao-oauth/05-kafka-broker-capability.png)
+
+Após salvar, vá à aba **Credentials** e copie o **Client secret** — você vai precisar dele para configurar o `docker-compose.yaml`.
+
+![Client secret do kafka-broker.](/images/posts/kafka-autenticacao-oauth/06-kafka-broker-secret.png)
+
+### 2.3 Adicionando o audience mapper ao `kafka-broker`
+
+O broker valida que todo JWT recebido contém `kafka-broker` no campo `aud`. Para isso, é necessário configurar um mapper que adicione essa claim aos tokens emitidos.
+
+Vá em **Clients** → `kafka-broker` → aba **Client scopes** → clique no scope `kafka-broker-dedicated`.
+
+![Client scope do kafka-broker.](/images/posts/kafka-autenticacao-oauth/07-kafka-broker-scope.png)
+
+Na aba **Mappers** → **Configure a new mapper** → selecione **Audience**.
+
+![Adicionar mapper — passo 1.](/images/posts/kafka-autenticacao-oauth/08-add-mapper-1.png)
+
+![Adicionar mapper — passo 2.](/images/posts/kafka-autenticacao-oauth/08-add-mapper-2.png)
+
+- **Name:** `kafka-broker-audience`
+- **Included Custom Audience:** `kafka-broker`
+- Clique em **Save**
+
+![Configuração do audience mapper.](/images/posts/kafka-autenticacao-oauth/09-audience-mapper.png)
+
+### 2.4 Criando o client `kafka-client`
+
+Este client é usado pelas aplicações Kotlin — o producer e o consumer. Repita os mesmos passos do **2.2**, com uma diferença:
+
+- **Client ID:** `kafka-client`
+
+Após salvar, copie o **Client secret** na aba **Credentials**.
+
+![Client secret do kafka-client.](/images/posts/kafka-autenticacao-oauth/10-kafka-client-secret.png)
+
+### 2.5 Adicionando o audience mapper ao `kafka-client`
+
+Repita os mesmos passos do **2.3** para o client `kafka-client`:
+
+**Clients** → `kafka-client` → **Client scopes** → `kafka-client-dedicated` → **Mappers** → **Configure a new mapper** → **Audience**
+
+- **Name:** `kafka-broker-audience`
+- **Included Custom Audience:** `kafka-broker`
+- Clique em **Save**
+
+![Audience mapper do kafka-client.](/images/posts/kafka-autenticacao-oauth/11-kafka-client-audience-mapper.png)
+
+### 2.6 Verificando a configuração
+
+Com o realm e os dois clients configurados, podemos confirmar que tudo está correto fazendo uma requisição de token diretamente ao Keycloak:
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `curl -s -X POST "http://localhost:8082/realms/kafka-example/protocol/openid-connect/token" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "grant_type=client_credentials&client_id=kafka-client&client_secret=<secret>"`,
+            label: 'terminal',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+O Keycloak deve responder com um JSON contendo um `access_token`. Se a requisição falhar ou o token não contiver `"aud": ["kafka-broker", ...]` no payload, verifique se o audience mapper foi configurado corretamente nos passos **2.3** e **2.5**.
+
+<CodeBlock className="my-24"
+    wrapLines
+    codeInstances={[
+        {
+            code: `eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI2UzVFTVF0TE56ZlFCMEZYYWk4ckdpbHZWaXZQb2ltbDRQMkd5NWk4cWtrIn0.eyJleHAiOjE3NzIzMTU4MTQsImlhdCI6MTc3MjMxNTUxNCwianRpIjoidHJydGNjOmNlYzBhNWMwLTFkMWYtNmZmYS1kYTI5LTdmZDk4ZDE1YzQ3OCIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4Mi9yZWFsbXMva2Fma2EtZXhhbXBsZSIsImF1ZCI6WyJrYWZrYS1icm9rZXIiLCJhY2NvdW50Il0sInN1YiI6IjFjN2FhZTMwLTAwMTMtNDY3Zi05ZmJkLWZhNTAwZjc5NGE2ZSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImthZmthLWNsaWVudCIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiLyoiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMta2Fma2EtZXhhbXBsZSIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6ImVtYWlsIHByb2ZpbGUiLCJjbGllbnRIb3N0IjoiMTcyLjIzLjAuMSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VydmljZS1hY2NvdW50LWthZmthLWNsaWVudCIsImNsaWVudEFkZHJlc3MiOiIxNzIuMjMuMC4xIiwiY2xpZW50X2lkIjoia2Fma2EtY2xpZW50In0.Ttd5Vm28ETSCo0VIob4jHCAcvCW77LgtX0klg6DcODyX3XaCylxdhexZBpAc0QMk9zbBs0zScEQVb9zA0PzeY10RHtXFo-hlghBnARlpajC733IJ69vGL6M5fjQMV8tKXJ-DG-zQZkyLIh0Xo5decSwRzbJYQExQf_LD5QcqkKbhZxFAIk-TRnI9IYXilTEnavnK16REoDnMjrJeVKvE3m0p1Huh5rwEB0ZHdhHqNmZCA1JBAzPrzJvPTvUvmhNHwER2joJ1A-V5xvHYrj63mEEou0xYoPPJyzjdIDpl7k4XWKxpqyRsaxxqD7i2E2bIm3mfGGskw8S5h3uHoR3OgQ`,
+            label: 'access_token',
+            language: 'jwt'
+        },
+    ]}
+/>
+
+À primeira vista parece ruído — mas é apenas base64url. Decodificando as duas primeiras partes (header e payload), o conteúdo fica legível. O <a href={"https://jwt.io"} target={"_blank"} rel={"noopener noreferrer"}>jwt.io</a> permite colar qualquer JWT e inspecionar suas claims instantaneamente:
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `// Header
+{
+  "alg": "RS256",
+  "typ": "JWT",
+  "kid": "6S5EMQtLNzfQB0FXai8rGilvVivPoiml4P2Gy5i8qkk"
+}
+
+// Payload
+{
+  "iss": "http://localhost:8082/realms/kafka-example",  // issuer — quem emitiu o token
+  "aud": ["kafka-broker", "account"],                   // audience — para quem o token é válido
+  "exp": 1772315814,                                    // expiration — quando o token expira
+  "iat": 1772315514,                                    // issued at — quando foi emitido (exp - iat = 300s)
+  "sub": "1c7aae30-0013-467f-9fbd-fa500f794a6e",        // subject — identidade única do client
+  "azp": "kafka-client",                                // authorized party — client que requisitou o token
+  "preferred_username": "service-account-kafka-client"
+}`,
+            label: 'JWT decodificado',
+            language: 'json'
+        },
+    ]}
+/>
+
+As claims que o broker vai verificar são exatamente `iss`, `aud` e `exp`. O `sub` e o `azp` identificam qual client se autenticou — informação que ficará mais relevante quando falarmos de autorização com ACLs.
+
+## 3. Configurando e subindo o broker
+
+Com o client secret do `kafka-broker` em mãos (copiado na etapa **2.2**), preencha o valor no `docker-compose.yaml`. O broker é configurado com variáveis de ambiente que ativam o mecanismo SASL e apontam para os endpoints do Keycloak:
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `broker:
+  image: confluentinc/cp-kafka:latest
+  environment:
+    # ... demais configurações ...
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >-
+      CONTROLLER:PLAINTEXT,EXTERNAL:SASL_PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
+    KAFKA_LISTENER_NAME_EXTERNAL_SASL_ENABLED_MECHANISMS: "OAUTHBEARER"
+    KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_EXPECTED_AUDIENCE: "kafka-broker"
+    KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_EXPECTED_ISSUER: "http://localhost:8082/realms/kafka-example"
+    KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_JWKS_ENDPOINT_URL: "http://keycloak:8080/realms/kafka-example/protocol/openid-connect/certs"
+    KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_TOKEN_ENDPOINT_URL: "http://keycloak:8080/realms/kafka-example/protocol/openid-connect/token"
+    KAFKA_LISTENER_NAME_EXTERNAL_OAUTHBEARER_SASL_LOGIN_CALLBACK_HANDLER_CLASS: "org.apache.kafka.common.security.oauthbearer.secured.OAuthBearerLoginCallbackHandler"
+    KAFKA_LISTENER_NAME_EXTERNAL_OAUTHBEARER_SASL_SERVER_CALLBACK_HANDLER_CLASS: "org.apache.kafka.common.security.oauthbearer.secured.OAuthBearerValidatorCallbackHandler"
+    KAFKA_BROKER_CLIENT_SECRET: "<secret do kafka-broker>"`,
+            label: 'docker-compose.yaml',
+            language: 'yaml'
+        },
+    ]}
+    copyButton
+/>
+
+Veja o que cada variável faz:
+
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_sasl.enabled.mechanisms"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_NAME_EXTERNAL_SASL_ENABLED_MECHANISMS</a><br></br>
+Define OAUTHBEARER como o mecanismo SASL habilitado no listener `EXTERNAL`.
+
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_sasl.oauthbearer.expected.audience"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_EXPECTED_AUDIENCE</a><br></br>
+O broker rejeita tokens cujo campo `aud` não contenha `kafka-broker`. Isso garante que tokens emitidos para outros serviços não funcionem no Kafka.
+
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_sasl.oauthbearer.expected.issuer"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_EXPECTED_ISSUER</a><br></br>
+O issuer (`iss`) esperado nos tokens. Tokens emitidos por outros realms ou servidores OAuth são rejeitados.
+
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_sasl.oauthbearer.jwks.endpoint.url"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_JWKS_ENDPOINT_URL</a><br></br>
+Endpoint de onde o broker busca as chaves públicas para validar assinaturas JWT. Note que a URL usa `keycloak:8080` — a rede interna do Docker — pois o broker acessa o Keycloak de dentro do container.
+
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_sasl.oauthbearer.token.endpoint.url"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_TOKEN_ENDPOINT_URL</a><br></br>
+Endpoint de onde o broker busca seu próprio token para autenticação interna com o Keycloak.
+
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_sasl.login.callback.handler.class"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_NAME_EXTERNAL_OAUTHBEARER_SASL_LOGIN_CALLBACK_HANDLER_CLASS</a><br></br>
+Handler responsável por buscar o token JWT no servidor OAuth durante o login do cliente.
+
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_sasl.server.callback.handler.class"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_NAME_EXTERNAL_OAUTHBEARER_SASL_SERVER_CALLBACK_HANDLER_CLASS</a><br></br>
+Handler do broker responsável por validar o JWT recebido durante o handshake SASL.
+
+Com as variáveis preenchidas, suba o broker:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: `docker compose up broker -d`,
+            label: 'terminal',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+## 4. Configurando os clientes Kotlin
+
+Para acompanhar este post criamos um <a href={"https://github.com/daanrsantiago/kafka-sasl-oauth-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>projeto de exemplo em Kotlin</a> com um producer e um consumer que se autenticam via SASL/OAUTHBEARER. Se você quiser entender como criar producers e consumers do zero, o <a href={"/pt-BR/blog/kafka-conceitos"}>primeiro post da série</a> cobre esses conceitos em detalhes.
+
+São necessárias cinco propriedades adicionais para habilitar a autenticação OAuth nos clientes Kafka:
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `// MessageProducer.kt / MessageConsumer.kt
+properties["bootstrap.servers"] = "localhost:9092"
+properties["security.protocol"] = "SASL_PLAINTEXT"
+properties["sasl.mechanism"]    = "OAUTHBEARER"
+properties["sasl.jaas.config"]  =
+    "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required" +
+    " clientId=\"kafka-client\"" +
+    " clientSecret=\"$clientSecret\";"
+properties["sasl.login.callback.handler.class"]   =
+    "org.apache.kafka.common.security.oauthbearer.secured.OAuthBearerLoginCallbackHandler"
+properties["sasl.oauthbearer.token.endpoint.url"] =
+    "http://localhost:8082/realms/kafka-example/protocol/openid-connect/token"`,
+            label: 'Kotlin',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+<a href={"https://kafka.apache.org/42/configuration/producer-configs/#producerconfigs_security.protocol"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>security.protocol</a><br></br>
+Instrui o cliente a usar SASL sem TLS. Em produção, o ideal é combinar os dois e usar `SASL_SSL`.
+
+<a href={"https://kafka.apache.org/42/configuration/producer-configs/#producerconfigs_sasl.mechanism"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>sasl.mechanism</a><br></br>
+Define OAUTHBEARER como o mecanismo SASL a ser usado na conexão.
+
+<a href={"https://kafka.apache.org/42/configuration/producer-configs/#producerconfigs_sasl.jaas.config"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>sasl.jaas.config</a><br></br>
+Configuração JAAS com `clientId` e `clientSecret` do client `kafka-client` no Keycloak. Essas credenciais são usadas para buscar o JWT antes de cada conexão.
+
+<a href={"https://kafka.apache.org/42/configuration/producer-configs/#producerconfigs_sasl.login.callback.handler.class"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>sasl.login.callback.handler.class</a><br></br>
+Implementação do handler que executa o Client Credentials Flow — chama o endpoint `/token` do Keycloak com as credenciais do `sasl.jaas.config` e obtém o JWT.
+
+<a href={"https://kafka.apache.org/42/configuration/producer-configs/#producerconfigs_sasl.oauthbearer.token.endpoint.url"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>sasl.oauthbearer.token.endpoint.url</a><br></br>
+URL do endpoint de token do Keycloak. Os clientes usam `localhost:8082` para acessar de fora do Docker, diferente do broker que usa a rede interna.
+
+## 5. Compilando e executando
+
+<CodeBlock className="my-24"
+    codeInstances={[
+        {
+            code: `# Compila os dois fat JARs
+./gradlew clean build
+
+# Com autenticação OAuth — conecta ao listener SASL_PLAINTEXT na porta 9092
+java -jar build/libs/producer-1.0-SNAPSHOT.jar --client-secret=<secret do kafka-client>
+java -jar build/libs/consumer-1.0-SNAPSHOT.jar --client-secret=<secret do kafka-client>
+
+# Sem autenticação — conecta ao listener PLAINTEXT na porta 9094
+java -jar build/libs/producer-1.0-SNAPSHOT.jar --no-auth
+java -jar build/libs/consumer-1.0-SNAPSHOT.jar --no-auth`,
+            label: 'terminal',
+            language: 'bash'
+        },
+    ]}
+    copyButton
+/>
+
+O broker expõe dois listeners externos para fins de comparação:
+
+| Listener | Porta | Protocolo | Uso |
+|---|---|---|---|
+| `EXTERNAL` | `9092` | `SASL_PLAINTEXT` | Conexão com autenticação OAuth |
+| `PLAINTEXT_EXTERNAL` | `9094` | `PLAINTEXT` | Conexão sem autenticação |
+
+A flag `--no-auth` conecta ao listener sem autenticação — útil para confirmar que o listener autenticado rejeita conexões sem token válido.
+
+# Conclusão
+
+Neste post adicionamos a segunda camada de segurança ao nosso cluster Kafka: autenticação com identidade verificável. O Keycloak atua como Authorization Server, emitindo JWTs assinados para as aplicações autorizadas. O broker valida cada token localmente usando as chaves JWKS em cache — sem chamadas de rede adicionais por mensagem. Clientes sem credenciais válidas simplesmente não conseguem se conectar.
+
+Mas saber **quem** está conectado não é suficiente — precisamos controlar o que cada identidade pode fazer. Um producer autenticado não deveria conseguir consumir tópicos de outros domínios. Um consumer de relatórios não deveria ter permissão para produzir eventos de pagamento. No próximo post vamos configurar **autorização com ACLs no Kafka**, definindo políticas granulares de acesso por tópico e operação.
