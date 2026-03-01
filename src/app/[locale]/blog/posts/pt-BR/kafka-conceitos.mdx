@@ -135,36 +135,36 @@ Juntamente do Kafka estaremos subindo uma aplicação do <a href={"https://docs.
 
 Durante a criação do container de Kafka passamos algumas variáveis de ambiente responsáveis por configurar o broker. Se estivéssemos configurando o broker através de um arquivo de configuração as chaves dessas variáveis seriam equivalentes ao que usamos, mas em letra minúscula, sem o prefixo "KAFKA_" e com pontos no lugar de "_". Portanto a variável de ambiente "KAFKA_NODE_ID" equivale a configuração "node.id" por exemplo. Vamos repassar cada uma das configurações do broker?
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_node.id"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_NODE_ID</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_node.id"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_NODE_ID</a><br></br>
 Representa o id do nó no cluster que estamos inseridos
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_listener.security.protocol.map"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_SECURITY_PROTOCOL_MAP</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_listener.security.protocol.map"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_SECURITY_PROTOCOL_MAP</a><br></br>
 É uma lista de items separada por vírgulas. Cada item é par de chave e valor, sendo a chave o nome do listener que vamos criar e o valor o protocolo de comunicação. Estamos usando o PLAINTEXT como protocolo, mas em casos reais é recomendado utilizar um protocolo como SSL para criptografar os dados em trânsito.
 
 Declaramos 3 listeners, **PLAINTEXT_HOST_INTERNAL** que pode ser visto internamente na rede do docker, **PLAINTEXT_HOST_EXTERNAL** que pode ser visto na rede da máquina que executa o docker pois estamos expondo a porta 9092 e por fim **CONTROLLER** que é o listener do controller que precisamos declarar separadamente.
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_advertised.listeners"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_ADVERTISED_LISTENERS</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_advertised.listeners"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_ADVERTISED_LISTENERS</a><br></br>
 São os listeners divulgados pelos nós do cluster para ajudar que os clientes encontrem outros nós
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_process.roles"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_PROCESS_ROLES</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_process.roles"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_PROCESS_ROLES</a><br></br>
 Dita os papeis desse nó do cluster. No caso, como estamos utilizando o modo KRaft, esse nó atua como controller e como broker.
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_controller.quorum.voters"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_CONTROLLER_QUORUM_VOTERS</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_controller.quorum.voters"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_CONTROLLER_QUORUM_VOTERS</a><br></br>
 Indica os outros nós votantes em situações onde é necessário um consenso, como ao eleger um novo líder de uma partição. Como estamos criando um cluster com somente um nó, ele é o único informado.
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_listeners"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENERS</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_listeners"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENERS</a><br></br>
 São todos os listeners declarados por este nó de cluster
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_inter.broker.listener.name"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_INTER_BROKER_LISTENER_NAME</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_inter.broker.listener.name"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_INTER_BROKER_LISTENER_NAME</a><br></br>
 É o nome do listener usado para comunicação entre brokers do cluster, para tarefas como a de replicação de tópicos
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_listeners.names"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_CONTROLLER_LISTENER_NAMES</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_listeners.names"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_CONTROLLER_LISTENER_NAMES</a><br></br>
 São os nomes dos listeners usados para comunicação do controller
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_offset.topic.replication.factor"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_offset.topic.replication.factor"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR</a><br></br>
 É o fator de replicação de um tópico especial do kafka que armazena os offsets de cada consumer. Ele pode assumir o valor máximo equivalente ao número de nós brokers do cluster. Como vamos utilizar apenas um, seu valor deve ser 1.
 
-<a href={"https://kafka.apache.org/documentation/#brokerconfigs_num.partitions"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_NUM_PARTITIONS</a><br></br>
+<a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_num.partitions"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_NUM_PARTITIONS</a><br></br>
 Quando um tópico é criado automaticamente por consumer o Kafka usa essa configuração para determinar o número de partições padrão a ser utilizado.
 
 ## Interagindo com o Kafka pelo Kafka-UI

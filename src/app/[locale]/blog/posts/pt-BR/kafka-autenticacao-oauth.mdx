@@ -12,7 +12,7 @@ tag: "tecnologia"
 
 No <a href={"/pt-BR/blog/kafka-ssl"}>post anterior</a> configuramos o Kafka com TLS, garantindo que os dados trafegam criptografados entre clientes e broker. Agora, qualquer tentativa de interceptar o tráfego encontra apenas ruído cifrado.
 
-Mas isso resolve apenas metade do problema. TLS protege **o que** é transmitido; precisamos agora controlar **quem** pode se conectar. Com o setup atual, qualquer serviço que tenha acesso de rede ao broker consegue produzir mensagens, consumir dados e potencialmente injetar eventos maliciosos, mesmo sem conseguir ler o conteúdo de outras conexões.
+Mas isso resolve apenas metade do problema. TLS protege **o que** é transmitido, mas precisamos agora controlar **quem** pode se conectar. Com o setup atual, qualquer serviço que tenha acesso de rede ao broker consegue produzir mensagens, consumir dados e potencialmente injetar eventos maliciosos, mesmo sem conseguir ler o conteúdo de outras conexões.
 
 Neste post vamos configurar **autenticação** no Kafka usando **SASL/OAUTHBEARER** com o <a href={"https://www.keycloak.org/"} target={"_blank"} rel={"noopener noreferrer"}>Keycloak</a> como servidor de autorização OAuth 2.0. Todo o código está disponível no <a href={"https://github.com/daanrsantiago/kafka-sasl-oauth-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>repositório de exemplo</a> criado para acompanhar este post.
 
@@ -38,7 +38,7 @@ O fluxo funciona assim:
 
 **JWT (JSON Web Token)**
 
-Um JWT tem três partes separadas por ponto: `header.payload.signature`. O header indica o algoritmo de assinatura; o payload carrega as *claims*, que são informações como `iss` (quem emitiu), `aud` (para quem é destinado), `exp` (quando expira) e `sub` (o sujeito, a identidade da aplicação). A signature é calculada pelo servidor OAuth com sua chave privada, garantindo que ninguém adulterou o token.
+Um JWT tem três partes separadas por ponto: `header.payload.signature`. O header indica o algoritmo de assinatura. O payload carrega as *claims*, que são informações como `iss` (quem emitiu), `aud` (para quem é destinado), `exp` (quando expira) e `sub` (o sujeito, a identidade da aplicação). A signature é calculada pelo servidor OAuth com sua chave privada, garantindo que ninguém adulterou o token.
 
 **JWKS (JSON Web Key Set)**
 
@@ -51,7 +51,7 @@ Comparado a credenciais estáticas (usuário/senha com SASL/PLAIN ou SCRAM), o O
 - **Identidades centralizadas**: um único servidor de identidade para todos os serviços, e rotacionar credenciais de um serviço não exige reconfigurar o broker
 - **Tokens com expiração curta**: se um token for capturado, ele expira automaticamente
 - **Sem reinicialização do broker**: novas credenciais de clientes não exigem reconfiguração no broker
-- **Integração com IAM corporativo**: Keycloak, Auth0, Okta; o Kafka vira mais um cliente do seu provedor de identidade existente
+- **Integração com IAM corporativo**: Keycloak, Auth0, Okta. O Kafka vira mais um cliente do seu provedor de identidade existente
 
 # Como funciona o SASL/OAUTHBEARER no Kafka
 
