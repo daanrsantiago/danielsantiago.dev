@@ -12,7 +12,7 @@ tag: "tecnologia"
 
 No <a href={"/pt-BR/blog/kafka-ssl"}>post anterior</a> configuramos o Kafka com TLS, garantindo que os dados trafegam criptografados entre clientes e broker. Agora, qualquer tentativa de interceptar o tráfego encontra apenas ruído cifrado.
 
-Mas isso resolve apenas metade do problema. TLS protege **o que** é transmitido; precisamos agora controlar **quem** pode se conectar. Com o setup atual, qualquer serviço que tenha acesso de rede ao broker consegue produzir mensagens, consumir dados e potencialmente injetar eventos maliciosos — mesmo sem conseguir ler o conteúdo de outras conexões.
+Mas isso resolve apenas metade do problema. TLS protege **o que** é transmitido; precisamos agora controlar **quem** pode se conectar. Com o setup atual, qualquer serviço que tenha acesso de rede ao broker consegue produzir mensagens, consumir dados e potencialmente injetar eventos maliciosos, mesmo sem conseguir ler o conteúdo de outras conexões.
 
 Neste post vamos configurar **autenticação** no Kafka usando **SASL/OAUTHBEARER** com o <a href={"https://www.keycloak.org/"} target={"_blank"} rel={"noopener noreferrer"}>Keycloak</a> como servidor de autorização OAuth 2.0. Todo o código está disponível no <a href={"https://github.com/daanrsantiago/kafka-sasl-oauth-kotlin-example"} target={"_blank"} rel={"noopener noreferrer"}>repositório de exemplo</a> criado para acompanhar este post.
 
@@ -20,15 +20,15 @@ Neste post vamos configurar **autenticação** no Kafka usando **SASL/OAUTHBEARE
 
 O Kafka funciona como um hub central de eventos em muitas arquiteturas de microsserviços. Mensagens de pedidos, transações financeiras, dados de usuários e logs de auditoria passam por ele o tempo todo. Sem autenticação, qualquer serviço com acesso à rede do broker pode:
 
-- **Produzir eventos falsos** em qualquer tópico — um serviço comprometido pode injetar pedidos fraudulentos, acionar workflows indevidos ou corromper o estado de outros sistemas
-- **Consumir dados sensíveis** de tópicos que não deveria acessar — um container com vulnerabilidade pode virar um ponto de exfiltração de dados
-- **Fazer spoofing de producers** — enviar mensagens se passando por outro serviço, quebrando rastreabilidade e trilhas de auditoria
+- **Produzir eventos falsos** em qualquer tópico: um serviço comprometido pode injetar pedidos fraudulentos, acionar workflows indevidos ou corromper o estado de outros sistemas
+- **Consumir dados sensíveis** de tópicos que não deveria acessar: um container com vulnerabilidade pode virar um ponto de exfiltração de dados
+- **Fazer spoofing de producers**: enviar mensagens se passando por outro serviço, quebrando rastreabilidade e trilhas de auditoria
 
-A defesa em profundidade que estamos construindo ao longo desta série tem três camadas: **criptografia** (TLS, que já configuramos), **autenticação** (quem você é — este post) e **autorização** (o que você pode fazer — próximo post, com ACLs).
+A defesa em profundidade que estamos construindo ao longo desta série tem três camadas: **criptografia** (TLS, que já configuramos), **autenticação** (quem você é, abordada neste post) e **autorização** (o que você pode fazer, no próximo post com ACLs).
 
 # O que é OAuth 2.0?
 
-OAuth 2.0 é um protocolo de autorização que permite que aplicações obtenham tokens de acesso de forma segura. No contexto do Kafka, usamos o **Client Credentials Flow** — um fluxo machine-to-machine, sem usuário humano envolvido.
+OAuth 2.0 é um protocolo de autorização que permite que aplicações obtenham tokens de acesso de forma segura. No contexto do Kafka, usamos o **Client Credentials Flow**, um fluxo machine-to-machine sem usuário humano envolvido.
 
 O fluxo funciona assim:
 
@@ -36,22 +36,22 @@ O fluxo funciona assim:
 2. O servidor OAuth retorna um **JWT** (JSON Web Token) assinado com sua chave privada
 3. A aplicação apresenta esse JWT ao Kafka como prova de identidade
 
-**JWT — JSON Web Token**
+**JWT (JSON Web Token)**
 
-Um JWT tem três partes separadas por ponto: `header.payload.signature`. O header indica o algoritmo de assinatura; o payload carrega as *claims* — informações como `iss` (quem emitiu), `aud` (para quem é destinado), `exp` (quando expira) e `sub` (o sujeito, a identidade da aplicação). A signature é calculada pelo servidor OAuth com sua chave privada, garantindo que ninguém adulterou o token.
+Um JWT tem três partes separadas por ponto: `header.payload.signature`. O header indica o algoritmo de assinatura; o payload carrega as *claims*, que são informações como `iss` (quem emitiu), `aud` (para quem é destinado), `exp` (quando expira) e `sub` (o sujeito, a identidade da aplicação). A signature é calculada pelo servidor OAuth com sua chave privada, garantindo que ninguém adulterou o token.
 
-**JWKS — JSON Web Key Set**
+**JWKS (JSON Web Key Set)**
 
-Para validar a assinatura do JWT sem precisar consultar o servidor OAuth a cada mensagem, o broker Kafka busca as **chaves públicas** do servidor via um endpoint JWKS. Essas chaves ficam em cache: o broker valida cada token localmente, de forma offline. Isso é importante para a performance — a autenticação não adiciona uma chamada de rede extra por mensagem produzida ou consumida.
+Para validar a assinatura do JWT sem precisar consultar o servidor OAuth a cada mensagem, o broker Kafka busca as **chaves públicas** do servidor via um endpoint JWKS. Essas chaves ficam em cache: o broker valida cada token localmente, de forma offline. Isso é importante para a performance: a autenticação não adiciona uma chamada de rede extra por mensagem produzida ou consumida.
 
 **Por que OAuth para o Kafka?**
 
 Comparado a credenciais estáticas (usuário/senha com SASL/PLAIN ou SCRAM), o OAuth traz vantagens importantes:
 
-- **Identidades centralizadas**: um único servidor de identidade para todos os serviços — rotacionar credenciais de um serviço não exige reconfigurar o broker
+- **Identidades centralizadas**: um único servidor de identidade para todos os serviços, e rotacionar credenciais de um serviço não exige reconfigurar o broker
 - **Tokens com expiração curta**: se um token for capturado, ele expira automaticamente
 - **Sem reinicialização do broker**: novas credenciais de clientes não exigem reconfiguração no broker
-- **Integração com IAM corporativo**: Keycloak, Auth0, Okta — o Kafka vira mais um cliente do seu provedor de identidade existente
+- **Integração com IAM corporativo**: Keycloak, Auth0, Okta; o Kafka vira mais um cliente do seu provedor de identidade existente
 
 # Como funciona o SASL/OAUTHBEARER no Kafka
 
@@ -63,13 +63,13 @@ O fluxo completo tem três fases:
 
 **Inicialização do broker:** ao subir, o broker busca as chaves públicas do Keycloak via endpoint JWKS e as mantém em cache. Toda validação de token que acontecer depois usará essas chaves localmente.
 
-**Obtenção do token (Client Credentials Flow):** antes de conectar ao broker, o producer ou consumer chama o endpoint `/token` do Keycloak com `client_id` e `client_secret`. O Keycloak retorna um JWT assinado com `aud=kafka-broker` no payload — indicando que o token foi emitido especificamente para ser apresentado ao broker.
+**Obtenção do token (Client Credentials Flow):** antes de conectar ao broker, o producer ou consumer chama o endpoint `/token` do Keycloak com `client_id` e `client_secret`. O Keycloak retorna um JWT assinado com `aud=kafka-broker` no payload, indicando que o token foi emitido especificamente para ser apresentado ao broker.
 
 **Handshake SASL/OAUTHBEARER:** o cliente anuncia que quer usar OAUTHBEARER, o broker confirma, e então o cliente envia o JWT. O broker valida:
 
-- **Assinatura**: usando a chave pública JWKS em cache — garante que o token não foi adulterado
-- **`aud`**: deve conter `kafka-broker` — impede que tokens emitidos para outros serviços funcionem aqui
-- **`iss`**: verifica que o token veio do issuer esperado — rejeita tokens de outros realms ou servidores
+- **Assinatura**: usando a chave pública JWKS em cache, o que garante que o token não foi adulterado
+- **`aud`**: deve conter `kafka-broker`, o que impede que tokens emitidos para outros serviços funcionem aqui
+- **`iss`**: verifica que o token veio do issuer esperado e rejeita tokens de outros realms ou servidores
 - **`exp`**: rejeita tokens expirados
 
 Se todas as validações passarem, a conexão é estabelecida e o cliente pode produzir e consumir normalmente.
@@ -115,14 +115,14 @@ No menu lateral, vá em **Clients** → **Create client**.
 
 ![Criar client no Keycloak.](/images/posts/kafka-autenticacao-oauth/03-create-client.png)
 
-**Página 1 — General Settings:**
+**Página 1 (General Settings):**
 - **Client type:** OpenID Connect
 - **Client ID:** `kafka-broker`
 - Clique em **Next**
 
 ![Configurações gerais do kafka-broker.](/images/posts/kafka-autenticacao-oauth/04-kafka-broker-general.png)
 
-**Página 2 — Capability config:**
+**Página 2 (Capability config):**
 - **Client authentication:** ON
 - Desmarque **Standard flow**
 - Marque **Service accounts roles**
@@ -130,7 +130,7 @@ No menu lateral, vá em **Clients** → **Create client**.
 
 ![Configuração de capabilities do kafka-broker.](/images/posts/kafka-autenticacao-oauth/05-kafka-broker-capability.png)
 
-Após salvar, vá à aba **Credentials** e copie o **Client secret** — você vai precisar dele para configurar o `docker-compose.yaml`.
+Após salvar, vá à aba **Credentials** e copie o **Client secret**, pois você vai precisar dele para configurar o `docker-compose.yaml`.
 
 ![Client secret do kafka-broker.](/images/posts/kafka-autenticacao-oauth/06-kafka-broker-secret.png)
 
@@ -156,7 +156,7 @@ Na aba **Mappers** → **Configure a new mapper** → selecione **Audience**.
 
 ### 2.4 Criando o client `kafka-client`
 
-Este client é usado pelas aplicações Kotlin — o producer e o consumer. Repita os mesmos passos do **2.2**, com uma diferença:
+Este client é usado pelas aplicações Kotlin, tanto o producer quanto o consumer. Repita os mesmos passos do **2.2**, com uma diferença:
 
 - **Client ID:** `kafka-client`
 
@@ -206,7 +206,7 @@ O Keycloak deve responder com um JSON contendo um `access_token`. Se a requisiç
     ]}
 />
 
-À primeira vista parece ruído — mas é apenas base64url. Decodificando as duas primeiras partes (header e payload), o conteúdo fica legível. O <a href={"https://jwt.io"} target={"_blank"} rel={"noopener noreferrer"}>jwt.io</a> permite colar qualquer JWT e inspecionar suas claims instantaneamente:
+À primeira vista parece ruído, mas é apenas base64url. Decodificando as duas primeiras partes (header e payload), o conteúdo fica legível. O <a href={"https://jwt.io"} target={"_blank"} rel={"noopener noreferrer"}>jwt.io</a> permite colar qualquer JWT e inspecionar suas claims instantaneamente:
 
 <CodeBlock className="my-24"
     codeInstances={[
@@ -234,7 +234,7 @@ O Keycloak deve responder com um JSON contendo um `access_token`. Se a requisiç
     ]}
 />
 
-As claims que o broker vai verificar são exatamente `iss`, `aud` e `exp`. O `sub` e o `azp` identificam qual client se autenticou — informação que ficará mais relevante quando falarmos de autorização com ACLs.
+As claims que o broker vai verificar são exatamente `iss`, `aud` e `exp`. O `sub` e o `azp` identificam qual client se autenticou, informação que ficará mais relevante quando falarmos de autorização com ACLs.
 
 ## 3. Configurando e subindo o broker
 
@@ -276,7 +276,7 @@ O broker rejeita tokens cujo campo `aud` não contenha `kafka-broker`. Isso gara
 O issuer (`iss`) esperado nos tokens. Tokens emitidos por outros realms ou servidores OAuth são rejeitados.
 
 <a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_sasl.oauthbearer.jwks.endpoint.url"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_JWKS_ENDPOINT_URL</a><br></br>
-Endpoint de onde o broker busca as chaves públicas para validar assinaturas JWT. Note que a URL usa `keycloak:8080` — a rede interna do Docker — pois o broker acessa o Keycloak de dentro do container.
+Endpoint de onde o broker busca as chaves públicas para validar assinaturas JWT. Note que a URL usa `keycloak:8080` (rede interna do Docker), pois o broker acessa o Keycloak de dentro do container.
 
 <a href={"https://kafka.apache.org/42/configuration/broker-configs/#brokerconfigs_sasl.oauthbearer.token.endpoint.url"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>KAFKA_LISTENER_NAME_EXTERNAL_SASL_OAUTHBEARER_TOKEN_ENDPOINT_URL</a><br></br>
 Endpoint de onde o broker busca seu próprio token para autenticação interna com o Keycloak.
@@ -339,7 +339,7 @@ Define OAUTHBEARER como o mecanismo SASL a ser usado na conexão.
 Configuração JAAS com `clientId` e `clientSecret` do client `kafka-client` no Keycloak. Essas credenciais são usadas para buscar o JWT antes de cada conexão.
 
 <a href={"https://kafka.apache.org/42/configuration/producer-configs/#producerconfigs_sasl.login.callback.handler.class"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>sasl.login.callback.handler.class</a><br></br>
-Implementação do handler que executa o Client Credentials Flow — chama o endpoint `/token` do Keycloak com as credenciais do `sasl.jaas.config` e obtém o JWT.
+Implementação do handler que executa o Client Credentials Flow: chama o endpoint `/token` do Keycloak com as credenciais do `sasl.jaas.config` e obtém o JWT.
 
 <a href={"https://kafka.apache.org/42/configuration/producer-configs/#producerconfigs_sasl.oauthbearer.token.endpoint.url"} target={"_blank"} rel={"noopener noreferrer"} style={{color: "#ddcbfb", "font-weight": "bold"}}>sasl.oauthbearer.token.endpoint.url</a><br></br>
 URL do endpoint de token do Keycloak. Os clientes usam `localhost:8082` para acessar de fora do Docker, diferente do broker que usa a rede interna.
@@ -373,10 +373,10 @@ O broker expõe dois listeners externos para fins de comparação:
 | `EXTERNAL` | `9092` | `SASL_PLAINTEXT` | Conexão com autenticação OAuth |
 | `PLAINTEXT_EXTERNAL` | `9094` | `PLAINTEXT` | Conexão sem autenticação |
 
-A flag `--no-auth` conecta ao listener sem autenticação — útil para confirmar que o listener autenticado rejeita conexões sem token válido.
+A flag `--no-auth` conecta ao listener sem autenticação, útil para confirmar que o listener autenticado rejeita conexões sem token válido.
 
 # Conclusão
 
-Neste post adicionamos a segunda camada de segurança ao nosso cluster Kafka: autenticação com identidade verificável. O Keycloak atua como Authorization Server, emitindo JWTs assinados para as aplicações autorizadas. O broker valida cada token localmente usando as chaves JWKS em cache — sem chamadas de rede adicionais por mensagem. Clientes sem credenciais válidas simplesmente não conseguem se conectar.
+Neste post adicionamos a segunda camada de segurança ao nosso cluster Kafka: autenticação com identidade verificável. O Keycloak atua como Authorization Server, emitindo JWTs assinados para as aplicações autorizadas. O broker valida cada token localmente usando as chaves JWKS em cache, sem chamadas de rede adicionais por mensagem. Clientes sem credenciais válidas simplesmente não conseguem se conectar.
 
-Mas saber **quem** está conectado não é suficiente — precisamos controlar o que cada identidade pode fazer. Um producer autenticado não deveria conseguir consumir tópicos de outros domínios. Um consumer de relatórios não deveria ter permissão para produzir eventos de pagamento. No próximo post vamos configurar **autorização com ACLs no Kafka**, definindo políticas granulares de acesso por tópico e operação.
+Mas saber **quem** está conectado não é suficiente: precisamos controlar o que cada identidade pode fazer. Um producer autenticado não deveria conseguir consumir tópicos de outros domínios. Um consumer de relatórios não deveria ter permissão para produzir eventos de pagamento. No próximo post vamos configurar **autorização com ACLs no Kafka**, definindo políticas granulares de acesso por tópico e operação.
