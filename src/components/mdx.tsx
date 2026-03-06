@@ -2,7 +2,7 @@ import { MDXRemote, MDXRemoteProps } from 'next-mdx-remote/rsc';
 import React, { ReactNode } from 'react';
 import remarkGfm from 'remark-gfm';
 
-import { SmartImage, SmartLink, Text } from '@/once-ui/components';
+import { InlineCode, SmartImage, SmartLink, Text } from '@/once-ui/components';
 import { CodeBlock } from '@/once-ui/modules';
 import { HeadingLink } from '@/components';
 
@@ -133,6 +133,7 @@ const components = {
     h6: createHeading(6) as any,
     img: createImage as any,
     a: CustomLink as any,
+    code: ({ children }: { children: React.ReactNode }) => <InlineCode>{children}</InlineCode>,
     Table,
     CodeBlock
 };

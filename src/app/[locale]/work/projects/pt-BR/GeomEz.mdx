@@ -1,0 +1,192 @@
+---
+title: "GeomEz"
+publishedAt: "2026-03-04"
+images:
+  - "/images/projects/GeomEz/GeomEz-logo.png"
+summary: "GeomEz é uma biblioteca Kotlin para construir e visualizar elementos geométricos 2D e 3D. Oferece uma API limpa e expressiva para representar pontos, vetores, direções, sistemas de coordenadas, curvas, superfícies e polígonos, com suporte completo a transformações afins, cálculo analítico em funções e visualização opcional via matplotlib."
+team:
+  - name: "Daniel Santiago"
+    role: "Desenvolvedor Backend"
+    avatar: "/images/avatar.png"
+    linkedIn: "https://www.linkedin.com/in/daniel-ribeiro-santiago/"
+tag: "tecnologia"
+---
+
+## Overview
+
+O GeomEz nasceu de uma necessidade real. Enquanto estudava Kotlin e desenvolvia um projeto pessoal de engenharia, percebi que precisava de ferramentas para trabalhar com geometria computacional de forma prática. Ao mesmo tempo, estava descobrindo as features que diferenciam o Kotlin do Java e percebi o quanto a sintaxe da linguagem poderia facilitar o desenvolvimento de aplicações que envolvem conceitos geométricos. Decidi então unir os dois objetivos e criar uma biblioteca que explorasse ao máximo o que o Kotlin tem de melhor.
+
+O resultado é uma API limpa, expressiva e type-safe para representar e manipular primitivas geométricas, realizar transformações afins, trabalhar com curvas e superfícies paramétricas e, opcionalmente, visualizar tudo isso via matplotlib.
+
+## Arquitetura
+
+O projeto é dividido em dois módulos independentes:
+
+- **geomez-core**: módulo puro de geometria, sem nenhuma dependência de renderização. Pode ser adicionado a qualquer projeto JVM sem overhead adicional.
+- **geomez-visualization**: módulo opcional que adiciona as funções `.plot()` e `.addPlotCommands()` a todos os tipos do core, delegando a renderização ao Python via a bridge [matplotlib4k](https://github.com/daanrsantiago/matplotlib4k).
+
+## Primitivas Geométricas
+
+A biblioteca oferece um conjunto rico de abstrações para geometria 2D e 3D.
+
+**Em 2D:**
+- `Point2D`, `Vector2D`, `Direction2D` — elementos fundamentais com igualdade tolerante a erros de ponto flutuante
+- `CoordinateSystem2D` — sistemas de coordenadas representados por matrizes afins 3x3
+- `Polynomial`, `LinearSpline`, `CubicSpline` — funções escalares com derivação e integração analíticas
+- `BezierCurve`, `CubicBezierSpline2D`, `ParametricCurve2D` — curvas paramétricas flexíveis
+- `Polygon2D`, `ConvexPolygon2D` — polígonos com cálculo de área via fórmula de Gauss
+
+**Em 3D:**
+- `Point3D`, `Vector3D`, `Direction3D` — análogos tridimensionais das primitivas 2D
+- `CoordinateSystem3D` — matrizes afins 4x4 para transformações no espaço
+- `ParametricCurve3D`, `ParametricSurface3D` — curvas e superfícies paramétricas com normais numéricas
+- `Curve3D` — coleção discreta e ordenada de pontos 3D
+
+## O Poder das Abstrações
+
+Apesar de aparentemente simples, as abstrações da biblioteca são extremamente poderosas. A API fluida e elegante consegue representar geometrias complexas com poucas linhas de código.
+
+Um exemplo real é a modelagem de um aerofólio 2D. O perfil aerodinâmico é descrito com precisão usando curvas de Bézier e splines cúbicas que capturam tanto o intradorso quanto o extradorso da asa:
+
+![Aerofólio modelado com GeomEz](/images/projects/GeomEz/plot_airfoil.png)
+
+Em três dimensões, a mesma abordagem paramétrica permite modelar geometrias muito mais complexas. Uma hélice completa, por exemplo, é definida como uma superfície paramétrica 3D que combina o perfil do aerofólio com rotações e redimensionamento dos perfis na direção radial:
+
+![Hélice modelada com GeomEz](/images/projects/GeomEz/plot_propeller.png)
+
+## Kotlin na Prática
+
+As features do Kotlin que diferenciam a linguagem do Java foram essenciais para construir uma API expressiva e concisa. Três delas merecem destaque especial.
+
+### Operator Overloading
+
+Em Java, somar dois pontos exigiria algo como `point1.add(point2)` ou `Point2D.sum(point1, point2)`. No Kotlin, com operator overloading, a operação se torna completamente natural e legível:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: `val p1 = Point2D(1.0, 2.0)
+val p2 = Point2D(3.0, 4.0)
+
+val soma       = p1 + p2    // Point2D(4.0, 6.0)
+val diferenca  = p2 - p1    // Point2D(2.0, 2.0)
+val escalonado = p1 * 2.0   // Point2D(2.0, 4.0)
+val invertido  = -p1        // Point2D(-1.0, -2.0)`,
+            label: 'Operadores aritméticos',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+O mesmo vale para funções e curvas, que podem ser invocadas com a notação natural de chamada de função:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: `val polinomio = Polynomial(listOf(1.0, 2.0, 3.0)) // p(x) = 1 + 2x + 3x²
+val y = polinomio(2.5)  // avalia p(2.5) = 23.75
+
+val curva = BezierCurve(listOf(
+    Point2D(0.0, 0.0),
+    Point2D(0.5, 1.5),
+    Point2D(1.5, 1.5),
+    Point2D(2.0, 0.0)
+))
+val ponto = curva(0.5)  // Point2D na curva para t = 0.5
+
+// Polinômios também suportam aritmética entre si
+val p3       = polinomio * Polynomial(listOf(0.0, 1.0)) // multiplicação
+val quadrado = polinomio pow 2                           // (1 + 2x + 3x²)²`,
+            label: 'Invocação de funções e curvas',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+### Desestruturação de Variáveis
+
+A desestruturação permite extrair componentes de objetos de forma direta, tornando o código muito mais legível do que acessar propriedades individualmente:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: `// Extração direta de coordenadas
+val (x, y)    = Point2D(5.0, 7.0)
+val (x, y, z) = Point3D(1.0, 2.0, 3.0)
+
+// Usada internamente para construir a matriz afim de um sistema de coordenadas
+val (x1, x2) = xDirection
+val (y1, y2) = yDirection
+val (p1, p2) = origin
+
+val affineMatrix = SimpleMatrix(arrayOf(
+    doubleArrayOf(x1, y1, p1),
+    doubleArrayOf(x2, y2, p2),
+    doubleArrayOf(0.0, 0.0, 1.0)
+))`,
+            label: 'Desestruturação',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+Sem desestruturação, cada acesso exigiria `xDirection.x`, `xDirection.y`, `origin.x` e assim por diante, tornando o código mais verboso e menos expressivo.
+
+### Extension Functions
+
+Extension functions permitem adicionar comportamentos a classes existentes sem modificá-las nem criar subclasses. Na GeomEz, são usadas extensivamente para adicionar operadores às matrizes do EJML e para enriquecer listas de pontos com operações geométricas:
+
+<CodeBlock className="my-24"
+    compact
+    codeInstances={[
+        {
+            code: `// Extensões em List<Point2D>
+val points: List<Point2D> = curva(linspace(0.0, 1.0, 100))
+
+val xs          = points.xPoints   // extrai todas as coordenadas x
+val ys          = points.yPoints   // extrai todas as coordenadas y
+val centro      = points.centroid  // ponto médio da coleção
+val comprimento = points.length    // comprimento do arco
+
+// Extensão para igualdade segura em ponto flutuante
+val iguais = 0.1 + 0.2.equalsDelta(0.3) // true (delta = 1e-10)`,
+            label: 'Extensões utilitárias',
+            language: 'kotlin'
+        },
+        {
+            code: `// No módulo de visualização, .plot() é uma extension function
+// adicionada a todos os tipos sem alterar o módulo core
+aerofólio.plot()
+helice.plot()
+
+// Composição de múltiplos elementos no mesmo gráfico
+pythonExecution {
+    val (fig, ax) = poligono.addPlotCommands()
+    bezier.addPlotCommands(fig, ax)
+    CoordinateSystem2D.MAIN_2D_COORDINATE_SYSTEM.addPlotCommands(fig, ax)
+    show()
+}`,
+            label: 'Extensões de visualização',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+## Tecnologias
+
+- **Kotlin 2.x** — linguagem principal, aproveitando operator overloading, desestruturação e extension functions
+- **EJML (Efficient Java Matrix Library)** — operações com matrizes afins 3x3 e 4x4
+- **matplotlib4k** — bridge Kotlin-Python para delegação da renderização ao matplotlib
+- **MkDocs** — documentação hospedada em [geomez.com](https://geomez.com)
+
+## Links
+
+- **Repositório:** [github.com/daanrsantiago/GeomEz](https://github.com/daanrsantiago/GeomEz)
+- **Documentação:** [geomez.com](https://geomez.com)

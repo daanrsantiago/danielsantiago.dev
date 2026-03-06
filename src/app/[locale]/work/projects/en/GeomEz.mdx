@@ -1,0 +1,196 @@
+---
+title: "GeomEz"
+publishedAt: "2026-03-04"
+images:
+  - "/images/projects/GeomEz/GeomEz-logo.png"
+summary: "GeomEz is a Kotlin library for building and visualizing 2D and 3D geometric elements. It offers a clean and expressive API for representing points, vectors, directions, coordinate systems, curves, surfaces and polygons, with full support for affine transformations, analytical calculus on functions and optional visualization via matplotlib."
+team:
+  - name: "Daniel Santiago"
+    role: "Backend Developer"
+    avatar: "/images/avatar.png"
+    linkedIn: "https://www.linkedin.com/in/daniel-ribeiro-santiago/"
+tag: "technology"
+---
+
+## Overview
+
+GeomEz was born out of a real need. While studying Kotlin and working on a personal engineering project, I realized I needed tools to work with computational geometry in a practical way. At the same time, I was discovering the features that set Kotlin apart from Java and noticed how much the language's syntax could simplify the development of applications involving geometric concepts. I decided to combine both goals and build a library that made the most of what Kotlin has to offer.
+
+The result is a clean, expressive and type-safe API for representing and manipulating geometric primitives, performing affine transformations, working with parametric curves and surfaces and, optionally, visualizing everything via matplotlib.
+
+## Architecture
+
+The project is split into two independent modules:
+
+- **geomez-core**: a pure geometry module with no rendering dependencies. It can be added to any JVM project with no additional overhead.
+- **geomez-visualization**: an optional module that adds `.plot()` and `.addPlotCommands()` functions to all core types, delegating rendering to Python via the [matplotlib4k](https://github.com/daanrsantiago/matplotlib4k) bridge.
+
+## Geometric Primitives
+
+The library provides a rich set of abstractions for 2D and 3D geometry.
+
+**In 2D:**
+- `Point2D`, `Vector2D`, `Direction2D` — fundamental elements with floating-point delta-safe equality
+- `CoordinateSystem2D` — coordinate systems represented by 3x3 affine matrices
+- `Polynomial`, `LinearSpline`, `CubicSpline` — scalar functions with analytical differentiation and integration
+- `BezierCurve`, `CubicBezierSpline2D`, `ParametricCurve2D` — flexible parametric curves
+- `Polygon2D`, `ConvexPolygon2D` — polygons with area computation via the shoelace formula
+
+**In 3D:**
+- `Point3D`, `Vector3D`, `Direction3D` — three-dimensional counterparts of the 2D primitives
+- `CoordinateSystem3D` — 4x4 affine matrices for spatial transformations
+- `ParametricCurve3D`, `ParametricSurface3D` — parametric curves and surfaces with numerical normals
+- `Curve3D` — a discrete, ordered collection of 3D points
+
+## The Power of Abstractions
+
+Despite appearing simple, the library's abstractions are extremely powerful. The fluid and elegant API can represent complex geometries with just a few lines of code.
+
+A real-world example is the modeling of a 2D airfoil. The aerodynamic profile is accurately described using Bezier curves and cubic splines that capture both the pressure and suction sides of the wing:
+
+![Airfoil modeled with GeomEz](/images/projects/GeomEz/plot_airfoil.png)
+
+In three dimensions, the same parametric approach allows modeling far more complex geometries. A complete propeller blade, for example, is defined as a 3D parametric surface that combines the airfoil profile with rotations and scaling along the radial direction:
+
+![Propeller modeled with GeomEz](/images/projects/GeomEz/plot_propeller.png)
+
+## Kotlin in Practice
+
+The Kotlin features that set the language apart from Java were essential for building an expressive and concise API. Three of them deserve special attention.
+
+### Operator Overloading
+
+In Java, adding two points would require something like `point1.add(point2)` or `Point2D.sum(point1, point2)`. In Kotlin, with operator overloading, the operation becomes completely natural and readable:
+
+<CodeBlock className="my-24"
+    compact
+    lineNumbers
+    codeInstances={[
+        {
+            code: `val p1 = Point2D(1.0, 2.0)
+val p2 = Point2D(3.0, 4.0)
+
+val sum      = p1 + p2    // Point2D(4.0, 6.0)
+val diff     = p2 - p1    // Point2D(2.0, 2.0)
+val scaled   = p1 * 2.0   // Point2D(2.0, 4.0)
+val negated  = -p1        // Point2D(-1.0, -2.0)`,
+            label: 'Arithmetic operators',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+The same applies to functions and curves, which can be invoked using natural function-call notation:
+
+<CodeBlock className="my-24"
+    compact
+    lineNumbers
+    codeInstances={[
+        {
+            code: `val polynomial = Polynomial(listOf(1.0, 2.0, 3.0)) // p(x) = 1 + 2x + 3x²
+val y = polynomial(2.5)  // evaluates p(2.5) = 23.75
+
+val curve = BezierCurve(listOf(
+    Point2D(0.0, 0.0),
+    Point2D(0.5, 1.5),
+    Point2D(1.5, 1.5),
+    Point2D(2.0, 0.0)
+))
+val point = curve(0.5)  // Point2D on the curve at t = 0.5
+
+// Polynomials also support arithmetic between each other
+val p3      = polynomial * Polynomial(listOf(0.0, 1.0)) // multiplication
+val squared = polynomial pow 2                           // (1 + 2x + 3x²)²`,
+            label: 'Invoking functions and curves',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+### Destructuring Declarations
+
+Destructuring allows you to extract components from objects directly, making the code far more readable than accessing properties one by one:
+
+<CodeBlock className="my-24"
+    compact
+    lineNumbers
+    codeInstances={[
+        {
+            code: `// Direct coordinate extraction
+val (x, y)    = Point2D(5.0, 7.0)
+val (x, y, z) = Point3D(1.0, 2.0, 3.0)
+
+// Used internally to build the affine matrix of a coordinate system
+val (x1, x2) = xDirection
+val (y1, y2) = yDirection
+val (p1, p2) = origin
+
+val affineMatrix = SimpleMatrix(arrayOf(
+    doubleArrayOf(x1, y1, p1),
+    doubleArrayOf(x2, y2, p2),
+    doubleArrayOf(0.0, 0.0, 1.0)
+))`,
+            label: 'Destructuring',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+Without destructuring, every access would require `xDirection.x`, `xDirection.y`, `origin.x` and so on, making the code more verbose and less expressive.
+
+### Extension Functions
+
+Extension functions allow adding behavior to existing classes without modifying them or creating subclasses. In GeomEz, they are used extensively to add operators to EJML matrices and to enrich lists of points with geometric operations:
+
+<CodeBlock className="my-24"
+    compact
+    lineNumbers
+    codeInstances={[
+        {
+            code: `// Extensions on List<Point2D>
+val points: List<Point2D> = curve(linspace(0.0, 1.0, 100))
+
+val xs      = points.xPoints   // extracts all x coordinates
+val ys      = points.yPoints   // extracts all y coordinates
+val center  = points.centroid  // mean point of the collection
+val length  = points.length    // arc length
+
+// Extension for floating-point safe equality
+val equal = 0.1 + 0.2.equalsDelta(0.3) // true (delta = 1e-10)`,
+            label: 'Utility extensions',
+            language: 'kotlin'
+        },
+        {
+            code: `// In the visualization module, .plot() is an extension function
+// added to all types without modifying the core module
+airfoil.plot()
+propeller.plot()
+
+// Composing multiple elements on the same plot
+pythonExecution {
+    val (fig, ax) = polygon.addPlotCommands()
+    bezier.addPlotCommands(fig, ax)
+    CoordinateSystem2D.MAIN_2D_COORDINATE_SYSTEM.addPlotCommands(fig, ax)
+    show()
+}`,
+            label: 'Visualization extensions',
+            language: 'kotlin'
+        },
+    ]}
+    copyButton
+/>
+
+## Technologies
+
+- **Kotlin 2.x** — primary language, leveraging operator overloading, destructuring and extension functions
+- **EJML (Efficient Java Matrix Library)** — 3x3 and 4x4 affine matrix operations
+- **matplotlib4k** — Kotlin-Python bridge for delegating rendering to matplotlib
+- **MkDocs** — documentation hosted at [geomez.com](https://geomez.com)
+
+## Links
+
+- **Repository:** [github.com/daanrsantiago/GeomEz](https://github.com/daanrsantiago/GeomEz)
+- **Documentation:** [geomez.com](https://geomez.com)

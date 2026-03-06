@@ -73,6 +73,6 @@
         "description": "Uma coleção de fotos por {name}"
     },
     "projectCard": {
-        "label": "Read Case Study"
+        "label": "Detalhes do projeto"
     }
 }

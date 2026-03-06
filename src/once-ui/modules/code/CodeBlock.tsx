@@ -8,6 +8,8 @@ import styles from '@/once-ui/modules/code/CodeBlock.module.scss';
 import { Flex, Button, IconButton, DropdownWrapper } from '@/once-ui/components';
 
 import Prism from 'prismjs';
+import 'prismjs/plugins/line-numbers/prism-line-numbers';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/plugins/line-highlight/prism-line-highlight';
 import 'prismjs/components/prism-kotlin';
 import 'prismjs/components/prism-bash';
@@ -27,6 +29,7 @@ type CodeBlockProps = {
     copyButton?: boolean;
     compact?: boolean;
     wrapLines?: boolean;
+    lineNumbers?: boolean;
     className?: string;
     style?: React.CSSProperties;
 };
@@ -53,6 +56,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
     copyButton = true,
     compact = false,
     wrapLines = false,
+    lineNumbers = false,
     className,
     style,
 }) => {
@@ -191,7 +195,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
                     <pre
                         data-line={highlight}
                         ref={preRef}
-                        className={`${styles.pre} ${wrapLines ? styles.preWrap : ''}${language !== 'jwt' ? ` language-${language}` : ''}`}
+                        className={`${styles.pre} ${wrapLines ? styles.preWrap : ''}${language !== 'jwt' ? ` language-${language}` : ''}${lineNumbers ? ' line-numbers' : ''}`}
                         tabIndex={-1}>
                         <code
                             ref={codeRef}
