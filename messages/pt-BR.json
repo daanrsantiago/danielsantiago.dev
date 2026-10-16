@@ -74,5 +74,9 @@
     },
     "projectCard": {
         "label": "Detalhes do projeto"
+    },
+    "projectCarousel": {
+        "previous": "Projeto anterior",
+        "next": "Próximo projeto"
     }
 }

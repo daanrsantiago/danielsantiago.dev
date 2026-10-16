@@ -124,9 +124,7 @@ export default function Home(
 					</Flex>
 				
 			</Flex>
-			<RevealFx translateY="16" delay={0.6}>
-				<Projects range={[1,1]} locale={locale}/>
-			</RevealFx>
+			<Projects carousel locale={locale}/>
 			{routes['/blog'] && (
 				<Flex
 					fillWidth gap="24"
@@ -145,7 +143,6 @@ export default function Home(
 					</Flex>
 				</Flex>
 			)}
-			<Projects range={[2]} locale={locale}/>
 			{ newsletter.display &&
 				<Mailchimp newsletter={newsletter} />
 			}
