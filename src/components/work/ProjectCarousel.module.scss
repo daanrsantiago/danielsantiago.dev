@@ -33,12 +33,20 @@
     margin-inline: calc(-1 * var(--carousel-peek));
     padding-inline: var(--carousel-peek);
     overflow: hidden;
+    // The browser keeps vertical scrolling and pinch-zoom; horizontal swipes go to the carousel.
+    touch-action: pan-y pinch-zoom;
 }
 
 .track {
     display: flex;
     gap: var(--carousel-gap);
     transition: transform 0.5s ease;
+    user-select: none;
+}
+
+// While the finger drags, the track follows it without easing.
+.dragging {
+    transition: none;
 }
 
 .slide {
