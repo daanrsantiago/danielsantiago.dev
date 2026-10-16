@@ -80,8 +80,7 @@ export default function Blog(
             </Heading>
 			<Flex
 				fillWidth flex={1} direction="column">
-				<Posts range={[1,3]} locale={locale} thumbnail/>
-				<Posts range={[4]} columns="2" locale={locale}/>
+				<Posts locale={locale} thumbnail/>
 			</Flex>
             {newsletter.display && (
                 <Mailchimp newsletter={newsletter} />
