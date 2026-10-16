@@ -1,8 +1,11 @@
 .root {
+    // Lets descendants measure the content column with `cqw`.
+    container-type: inline-size;
     --carousel-gap: var(--static-space-24);
-    // How far the carousel reaches past the content column on each side.
+    // How far the carousel reaches past the content column on each side: 6rem, or less
+    // when the page margin is narrower (phones), so the strip never runs off the screen.
     // Neighboring projects show only within this strip (minus the gap).
-    --carousel-peek: 6rem;
+    --carousel-peek: min(6rem, (100vw - 100cqw) / 2);
     // Same entrance as the RevealFx used on the home page. RevealFx itself can't wrap
     // the carousel: its mask-image hides everything outside the content column.
     animation: enter 1s ease 0.6s both;
@@ -33,6 +36,14 @@
     margin-inline: calc(-1 * var(--carousel-peek));
     padding-inline: var(--carousel-peek);
     overflow: hidden;
+    // Fade the neighbors out toward the outer edges instead of cutting them off with a hard line.
+    mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--carousel-peek),
+        #000 calc(100% - var(--carousel-peek)),
+        transparent
+    );
     // The browser keeps vertical scrolling and pinch-zoom; horizontal swipes go to the carousel.
     touch-action: pan-y pinch-zoom;
 }
@@ -56,8 +67,8 @@
 }
 
 .inactive {
-    filter: blur(6px);
-    opacity: 0.4;
+    filter: blur(12px);
+    opacity: 0.6;
     cursor: pointer;
 }
 
