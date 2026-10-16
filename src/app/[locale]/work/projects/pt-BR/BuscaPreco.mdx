@@ -1,0 +1,154 @@
+---
+title: "Busca Preço"
+publishedAt: "2026-10-16"
+images:
+  - "/images/projects/BuscaPreco/feature-graphic.png"
+summary: "App para Android e iOS que transforma notas fiscais em uma base colaborativa de preços de supermercado. Projetei e desenvolvi o produto inteiro: app, backend, leitura das notas e infraestrutura."
+team:
+  - name: "Daniel Santiago"
+    role: "Criador e desenvolvedor full stack"
+    avatar: "/images/avatar.png"
+    linkedIn: "https://www.linkedin.com/in/daniel-ribeiro-santiago/"
+tag: "tecnologia"
+---
+
+O **Busca Preço** é um app para Android e iOS que mostra quanto um produto custa nos mercados perto de você e quanto ele custava meses atrás. Os preços vêm de notas fiscais escaneadas pela própria comunidade: cada compra registrada vira informação para todo mundo.
+
+Projetei e desenvolvi o produto de ponta a ponta, sozinho: o app mobile, a API, o serviço que lê notas fiscais de sete estados, o painel de moderação, a infraestrutura e a publicação nas lojas.
+
+- **Papel:** criador e único desenvolvedor
+- **Período:** desde novembro de 2024
+- **Plataformas:** Android, iPhone e iPad
+- **Em números:** 545 usuários, 554 notas fiscais processadas e 5.961 preços publicados
+- **Disponível em:** [Google Play](https://play.google.com/store/apps/details?id=br.net.buscapreco.app) · [App Store](https://apps.apple.com/br/app/id6762030890) · [buscapreco.net](https://buscapreco.net)
+
+## Começou com o preço do café
+
+Depois da pandemia, eu tinha a impressão de que o café ficava mais caro a cada ida ao mercado. Mas, na hora de comparar, nunca lembrava quanto tinha pago da última vez.
+
+A resposta estava no fundo da sacola. Toda compra no varejo brasileiro gera uma NFC-e, a nota fiscal eletrônica do consumidor, com o nome, o código de barras e o preço de cada item, além do CNPJ e do endereço da loja. O QR code impresso nela leva a um portal público da Secretaria da Fazenda (SEFAZ) do estado, com tudo isso detalhado.
+
+Ou seja: dados de preço confiáveis já são produzidos a cada compra, em todo o país. Só não estão em nenhum lugar onde dê para consultá-los. Se cada pessoa escaneasse as próprias notas, a soma delas viraria um histórico de preços colaborativo, mercado a mercado.
+
+## Como funciona
+
+![Três telas do app: detalhes de uma nota escaneada, histórico de preços do café e estimativa de uma lista de compras por mercado.](/images/projects/BuscaPreco/como-funciona.jpg)
+
+1. **Escaneie a nota.** O app lê o QR code e o backend busca os itens no portal da SEFAZ. Cada item vira um preço registrado, com data e mercado.
+2. **Consulte um produto.** Pelo nome ou pelo código de barras, você vê o preço nos mercados próximos e como ele variou ao longo do tempo.
+3. **Compare mercados.** Monte uma lista de compras e o app estima o total em cada mercado da região. Depois da compra, ele mostra quanto você economizou em relação aos outros.
+
+## Arquitetura
+
+![Diagrama da arquitetura: o app e o painel de moderação conversam com a API em Spring Boot, que usa PostgreSQL, Redis e S3, delega a leitura das notas a um serviço em Python e se integra a Open Food Facts, Google Places, Cloud Vision e Firebase.](/images/projects/BuscaPreco/arquitetura.svg)
+
+O centro do sistema é uma API em **Spring Boot com Kotlin**, que concentra as regras de negócio e é a única peça que acessa o banco. O mesmo Kotlin está no app, que roda em Android e iOS com **Kotlin Multiplatform**. O painel de moderação é uma SPA em React, e a autenticação fica num **Keycloak** próprio, com login social.
+
+A leitura das notas fiscais fica num serviço separado, em **Python**. Automatizar navegador é lento, consome muita memória e quebra sempre que um portal muda de layout. Com isso isolado num serviço próprio, uma falha num portal não derruba a API, e consigo publicar a correção de um estado sem mexer no resto. A API processa as notas de forma assíncrona: o usuário escaneia, continua usando o app e recebe uma notificação quando a nota termina de ser processada.
+
+Tudo roda numa VPS própria, com Docker Swarm, atrás do Cloudflare.
+
+## Os desafios
+
+Quase todos os problemas difíceis do Busca Preço têm a mesma origem: os dados vêm do mundo real. Eles são gerados por milhares de sistemas de caixa diferentes, e nenhum deles foi pensado para ser lido por outro programa. A estratégia que acabou se repetindo no projeto inteiro foi **automatizar o caso comum e criar um caminho barato para uma pessoa corrigir o resto**.
+
+### Ler notas fiscais sem uma API
+
+Não existe uma API pública para o cidadão consultar as próprias notas. Cada estado tem o seu portal, com HTML, fluxo de navegação e particularidades próprias. O que todos têm em comum é a chave de acesso de 44 dígitos impressa na nota, e os dois primeiros dígitos dela indicam o estado.
+
+O serviço de notas usa isso como roteador: lê o código do estado e entrega a chave ao leitor daquele portal. Todos os leitores implementam o mesmo contrato, então, para o backend, tanto faz se a nota é de São Paulo ou de Rondônia. Hoje são sete estados: DF, GO, MG, RJ, RO, SC e SP.
+
+A extração dos dados de cada página é feita por funções puras, testadas contra páginas reais salvas como fixtures. Quando um portal muda, salvo a página nova, ajusto o parser e rodo os testes de todos os estados para garantir que não quebrei nenhum outro. Também limito a frequência de consultas a cada portal: o serviço depende de uma infraestrutura pública, e não quero ser o motivo de ela ficar lenta.
+
+O custo dessa abordagem é a manutenção. Ler páginas é frágil por natureza, e cada estado novo é praticamente um projeto pequeno. Aceitei esse custo porque nenhuma outra fonte tem a precisão de que o app precisa.
+
+### Uma busca que entende "leite"
+
+A primeira versão da busca usava similaridade de trigramas (`pg_trgm`) no PostgreSQL. Ela tolera erros de digitação, mas não sabe o que é uma palavra, e os resultados mostravam isso:
+
+| Busca | Primeiro resultado (antes) | Primeiro resultado (depois) |
+|---|---|---|
+| leite | Creme de leite | Leite integral |
+| papel higiênico | Tapete higiênico | Papel higiênico |
+
+O caminho óbvio seria subir um Elasticsearch. Avaliei e descartei: o custo de operar mais um cluster não se justificava na escala atual. Resolvi dentro do próprio Postgres, combinando sinais:
+
+- **Busca textual completa** com dicionário em português e sem acentos: "higiênico" e "higienico" viram o mesmo termo, e resultados que contêm todas as palavras buscadas vêm antes dos demais.
+- **Pesos por campo:** casar no nome vale mais que casar na marca.
+- **Posição da palavra:** "Leite integral" começa com o termo buscado e "Creme de leite" não. Foi esse sinal que resolveu o caso do leite.
+- **Trigramas como plano B**, quando nada casa, para continuar tolerando erros de digitação.
+- **Popularidade** como desempate, calculada a partir da quantidade de preços recentes de cada produto.
+
+A mudança ficou toda no ranking. Os parâmetros e o formato da resposta continuaram iguais, então os apps não precisaram de nenhuma atualização.
+
+### Produtos a granel: o mesmo corte com dez nomes
+
+Produtos embalados têm código de barras, o que torna fácil saber quando dois registros são o mesmo produto. Produtos a granel não têm: cada mercado batiza o item como quiser. Um único corte de carne apareceu no banco como dez produtos diferentes: "Contra File", "Car Contra File Bovi", "Carne Bovina Contra File", "[pr] Carne Contra File Kg"…
+
+Isso fragmenta o histórico e impede comparar o preço desse corte entre mercados, que é justamente o valor central do app.
+
+A tentação era fundir tudo automaticamente por similaridade de texto, mas ela erra para os dois lados. "Coxão mole" e "coxão duro" são quase idênticos como texto e são cortes diferentes, com preços diferentes. Uma fusão errada corromperia exatamente o dado que o app existe para comparar. Já "Car Contra File Bovi" e "Contra Filé" são o mesmo corte e têm similaridade baixa.
+
+A solução foi dividir o trabalho: **o algoritmo sugere, uma pessoa decide**. Um job agrupa candidatos e calcula uma pontuação para cada par, e eu aprovo ou rejeito as sugestões no painel de moderação. A ligação não é destrutiva: cada produto absorvido aponta para um representante do grupo, nenhum preço é apagado ou reescrito, e qualquer fusão pode ser desfeita. As notas novas passam a ser comparadas com esse catálogo curado, o que impede a criação de novos duplicados.
+
+Considerei usar embeddings e descartei: para distinguir cortes de carne, um vocabulário curado funciona melhor e não exige infraestrutura nova.
+
+### Do Android ao iOS sem reescrever o app
+
+O app nasceu só para Android, em Jetpack Compose. Para chegar ao iPhone, as opções eram reescrever em Swift (duas bases de código e uma linguagem nova), reescrever tudo em Flutter ou React Native, ou migrar para **Kotlin Multiplatform com Compose Multiplatform**.
+
+Escolhi a última. Telas, ViewModels, repositórios, regras de negócio e a camada de rede passaram para um módulo compartilhado. Só o que depende do sistema operacional tem uma implementação por plataforma:
+
+| Recurso | Android | iOS |
+|---|---|---|
+| Câmera e leitura de códigos | CameraX + ML Kit | AVFoundation + Vision |
+| Assinaturas | Google Play Billing | StoreKit 2 |
+| Localização | Google Play Services | CoreLocation |
+
+A migração teve custo: troquei bibliotecas que só existiam no Android (Retrofit por Ktor, Hilt por Koin) e precisei aprender o suficiente do ecossistema da Apple para integrar câmera, pagamentos e notificações. Em troca, o app chegou ao iPhone e ao iPad com as mesmas funcionalidades do Android, e cada funcionalidade nova passou a ser escrita uma vez só.
+
+![A mesma tela de produto rodando em Android, iPhone e iPad.](/images/projects/BuscaPreco/multiplataforma.jpg)
+
+### Outros problemas que valeram a pena
+
+- **Dados de produto.** No Brasil, as bases de códigos de barras são, em sua maioria, fechadas. O app consulta primeiro o Open Food Facts, que tem licença aberta, e dá os créditos devidos. Quando o produto não está lá, ele é criado a partir da própria nota (onde aparece como "LEITE UHT INTEGRAL ITAMBE 1L"), e a comunidade pode completar o cadastro com foto e dados. Os envios passam por uma triagem automática de imagens impróprias e depois por moderação manual. A categoria é atribuída automaticamente pelo código NCM, a classificação fiscal que já vem em cada item da nota.
+- **Onde fica esse mercado?** A nota traz o CNPJ, a razão social e o endereço, mas não traz coordenadas nem o nome pelo qual as pessoas conhecem a loja. O backend geocodifica o endereço, busca estabelecimentos próximos e escolhe o candidato pelo número do endereço e pela semelhança do nome. Quando erra, quem registrou o mercado pode escolher outro candidato, e no painel eu corrijo pelo mapa.
+- **O problema do ovo e da galinha.** Um app colaborativo vazio não tem valor, e sem valor ninguém contribui. Por isso, consultar preços consome créditos: uma parte se renova todo dia, para quem só quer usar, e outra é ganha ao contribuir, sendo que notas com mais itens rendem mais. Níveis de experiência dão uma sensação de progresso, e a assinatura remove os limites. Também existem proteções contra abuso, que, por motivos óbvios, não vou detalhar aqui.
+
+![Lista de compras com a estimativa total e tela de comparação mostrando quanto o usuário economizou e os créditos que ganhou.](/images/projects/BuscaPreco/lista-e-comparacao.jpg)
+
+## Onde o projeto está hoje
+
+O Busca Preço está publicado na Google Play e na App Store, para iPhone e iPad, e lê notas de sete estados. Até agora:
+
+- **545** usuários
+- **554** notas fiscais processadas
+- **5.961** preços publicados
+
+São números de um projeto ainda no começo, mas cada preço saiu de uma compra real, registrada por alguém que quis contribuir.
+
+## O que aprendi
+
+- **Registre a origem dos dados desde o primeiro dia.** Nas primeiras versões, eu também usava outras fontes de dados de produto. Quando revisei o licenciamento, decidi ficar só com fontes abertas e com o que a comunidade envia, mesmo perdendo cobertura. A migração reconsultou o catálogo inteiro e removeu as imagens cuja licença não era compatível. Ela teria sido bem mais simples se eu soubesse de onde veio cada registro: dois terços do catálogo não tinham essa informação, e a única saída segura foi reprocessar todos.
+- **Ter uma pessoa no circuito é uma funcionalidade, não uma gambiarra.** Mercados, granel, produtos enviados: em todos esses casos, o melhor desenho foi o algoritmo sugerir e uma pessoa confirmar, com decisões reversíveis.
+- **Use o banco que você já tem até ele realmente não dar conta.** O PostgreSQL resolveu busca textual, tolerância a erros de digitação e ranking sem mais um sistema para operar.
+- **Isole o que é frágil.** A parte mais instável do sistema, a leitura dos portais, vive num serviço próprio e não derruba o resto quando falha.
+- **Escreva antes de programar.** Antes de cada funcionalidade relevante, escrevo um documento curto de design com o contexto, as decisões e o que fica de fora. Hoje são mais de 60, e foram eles que tornaram este texto possível.
+
+## Tecnologias
+
+- **Mobile:** Kotlin Multiplatform, Compose Multiplatform, Ktor, Koin
+- **Backend:** Kotlin, Spring Boot 3, Spring Security (OAuth2), JPA, Flyway, OpenFeign, Testcontainers
+- **Dados:** PostgreSQL (busca textual e `pg_trgm`), Redis, S3
+- **Leitura de notas:** Python, Flask, Selenium
+- **Painel de moderação:** React, TypeScript, Vite, Tailwind, TanStack Query
+- **Site:** Astro
+- **Autenticação:** Keycloak (OIDC, login social)
+- **Infraestrutura:** VPS própria, Docker Swarm, Cloudflare, Prometheus
+- **Integrações:** Open Food Facts, Google Places e Geocoding, Cloud Vision, Firebase Cloud Messaging, Google Play Billing, StoreKit 2
+
+## Links
+
+- **Site:** [buscapreco.net](https://buscapreco.net)
+- **Google Play:** [Busca Preço](https://play.google.com/store/apps/details?id=br.net.buscapreco.app)
+- **App Store:** [Busca Preço: Compras](https://apps.apple.com/br/app/id6762030890)
