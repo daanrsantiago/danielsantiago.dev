@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5E7D6E"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="900" rx="28" fill="#F5F9F6"/>
+
+  <text x="60" y="82" font-size="34" font-weight="700" fill="#14382A">Busca Preço architecture</text>
+
+  <!-- Column labels -->
+  <g font-size="15" font-weight="700" fill="#6E8C7D" letter-spacing="2">
+    <text x="60" y="150">CLIENTS</text>
+    <text x="520" y="150">BACKEND</text>
+    <text x="1010" y="150">INTEGRATIONS</text>
+  </g>
+
+  <!-- Clients -->
+  <rect x="60" y="170" width="320" height="130" rx="16" fill="#FFFFFF" stroke="#1B6B4A" stroke-width="2"/>
+  <text x="84" y="214" font-size="23" font-weight="700" fill="#14382A">Android and iOS app</text>
+  <text x="84" y="248" font-size="17" fill="#4A6658">Kotlin Multiplatform</text>
+  <text x="84" y="274" font-size="17" fill="#4A6658">Compose Multiplatform</text>
+
+  <rect x="60" y="340" width="320" height="104" rx="16" fill="#FFFFFF" stroke="#1B6B4A" stroke-width="2"/>
+  <text x="84" y="384" font-size="23" font-weight="700" fill="#14382A">Moderation dashboard</text>
+  <text x="84" y="418" font-size="17" fill="#4A6658">React · TypeScript</text>
+
+  <rect x="60" y="560" width="320" height="104" rx="16" fill="#E2F0E8" stroke="#9CC5AF" stroke-width="2"/>
+  <text x="84" y="604" font-size="23" font-weight="700" fill="#14382A">Keycloak</text>
+  <text x="84" y="638" font-size="17" fill="#4A6658">OAuth2 · OIDC · social login</text>
+
+  <!-- API -->
+  <rect x="520" y="230" width="380" height="220" rx="20" fill="#1B6B4A"/>
+  <text x="550" y="300" font-size="30" font-weight="700" fill="#FFFFFF">Busca Preço API</text>
+  <text x="550" y="342" font-size="19" fill="#D5EADF">Spring Boot 3 · Kotlin</text>
+  <text x="550" y="372" font-size="19" fill="#D5EADF">REST · OpenAPI · Flyway</text>
+  <text x="550" y="420" font-size="16" fill="#A9D1BC">asynchronous receipt processing</text>
+
+  <!-- Data -->
+  <rect x="520" y="560" width="170" height="104" rx="16" fill="#E2F0E8" stroke="#9CC5AF" stroke-width="2"/>
+  <text x="540" y="604" font-size="21" font-weight="700" fill="#14382A">PostgreSQL</text>
+  <text x="540" y="636" font-size="16" fill="#4A6658">FTS · pg_trgm</text>
+
+  <rect x="710" y="560" width="90" height="104" rx="16" fill="#E2F0E8" stroke="#9CC5AF" stroke-width="2"/>
+  <text x="727" y="604" font-size="21" font-weight="700" fill="#14382A">Redis</text>
+  <text x="727" y="636" font-size="15" fill="#4A6658">rate limit</text>
+
+  <rect x="820" y="560" width="80" height="104" rx="16" fill="#F1F3F2" stroke="#B4BDB8" stroke-width="2" stroke-dasharray="7 6"/>
+  <text x="845" y="604" font-size="21" font-weight="700" fill="#14382A">S3</text>
+  <text x="836" y="636" font-size="15" fill="#4A6658">images</text>
+
+  <!-- Receipt service and SEFAZ -->
+  <rect x="1010" y="170" width="250" height="104" rx="16" fill="#FFFFFF" stroke="#1B6B4A" stroke-width="2"/>
+  <text x="1032" y="212" font-size="21" font-weight="700" fill="#14382A">Receipt service</text>
+  <text x="1032" y="244" font-size="16" fill="#4A6658">Python · Flask · Selenium</text>
+
+  <rect x="1300" y="170" width="240" height="104" rx="16" fill="#F1F3F2" stroke="#B4BDB8" stroke-width="2" stroke-dasharray="7 6"/>
+  <text x="1322" y="212" font-size="21" font-weight="700" fill="#14382A">NFC-e portals</text>
+  <text x="1322" y="244" font-size="16" fill="#4A6658">7 state tax authorities</text>
+
+  <!-- External integrations -->
+  <g font-size="19">
+    <rect x="1010" y="320" width="530" height="66" rx="14" fill="#F1F3F2" stroke="#B4BDB8" stroke-width="2" stroke-dasharray="7 6"/>
+    <text x="1032" y="361" font-weight="700" fill="#14382A">Open Food Facts</text>
+    <text x="1210" y="361" font-size="16" fill="#4A6658">product data by barcode</text>
+
+    <rect x="1010" y="406" width="530" height="66" rx="14" fill="#F1F3F2" stroke="#B4BDB8" stroke-width="2" stroke-dasharray="7 6"/>
+    <text x="1032" y="447" font-weight="700" fill="#14382A">Google Places</text>
+    <text x="1210" y="447" font-size="16" fill="#4A6658">store location and photos</text>
+
+    <rect x="1010" y="492" width="530" height="66" rx="14" fill="#F1F3F2" stroke="#B4BDB8" stroke-width="2" stroke-dasharray="7 6"/>
+    <text x="1032" y="533" font-weight="700" fill="#14382A">Cloud Vision</text>
+    <text x="1210" y="533" font-size="16" fill="#4A6658">screening of uploaded images</text>
+
+    <rect x="1010" y="578" width="530" height="66" rx="14" fill="#F1F3F2" stroke="#B4BDB8" stroke-width="2" stroke-dasharray="7 6"/>
+    <text x="1032" y="619" font-weight="700" fill="#14382A">Firebase</text>
+    <text x="1210" y="619" font-size="16" fill="#4A6658">push notifications</text>
+  </g>
+
+  <!-- Arrows -->
+  <g fill="none" stroke="#5E7D6E" stroke-width="2.5" marker-end="url(#arrow)">
+    <path d="M380,235 C450,235 450,290 516,290"/>
+    <path d="M380,392 C450,392 450,390 516,390"/>
+    <path d="M605,450 L605,555"/>
+    <path d="M755,450 L755,555"/>
+    <path d="M860,450 L860,555"/>
+    <path d="M900,262 C955,262 955,222 1006,222"/>
+    <path d="M1260,222 L1296,222"/>
+    <path d="M900,330 C955,330 955,353 1006,353"/>
+    <path d="M900,360 C960,360 950,439 1006,439"/>
+    <path d="M900,390 C970,390 950,525 1006,525"/>
+    <path d="M900,420 C980,420 950,611 1006,611"/>
+  </g>
+  <g fill="none" stroke="#5E7D6E" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#arrow)">
+    <path d="M220,444 L220,555"/>
+    <path d="M520,440 C450,440 450,612 384,612"/>
+  </g>
+  <text x="232" y="506" font-size="15" fill="#6E8C7D">login</text>
+  <text x="438" y="506" font-size="15" fill="#6E8C7D" text-anchor="end">validates JWT</text>
+
+  <!-- Legend -->
+  <line x1="60" y1="780" x2="1540" y2="780" stroke="#D6E5DC" stroke-width="2"/>
+  <g font-size="17" fill="#4A6658">
+    <rect x="60" y="816" width="28" height="22" rx="5" fill="#FFFFFF" stroke="#1B6B4A" stroke-width="2"/>
+    <text x="100" y="833">My code</text>
+    <rect x="270" y="816" width="28" height="22" rx="5" fill="#E2F0E8" stroke="#9CC5AF" stroke-width="2"/>
+    <text x="310" y="833">Self-hosted infrastructure</text>
+    <rect x="590" y="816" width="28" height="22" rx="5" fill="#F1F3F2" stroke="#B4BDB8" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="630" y="833">Third-party services</text>
+    <text x="1540" y="833" text-anchor="end">Self-managed VPS · Docker Swarm · Cloudflare</text>
+  </g>
+</svg>
