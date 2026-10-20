@@ -1,4 +1,4 @@
-const baseURL = 'danielsantiago.dev'
+const baseURL = 'www.danielsantiago.dev'
 
 // Enable localization
 const i18n = true;
