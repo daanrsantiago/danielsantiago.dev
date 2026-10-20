@@ -195,7 +195,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
                     <pre
                         data-line={highlight}
                         ref={preRef}
-                        className={`${styles.pre} ${wrapLines ? styles.preWrap : ''}${language !== 'jwt' ? ` language-${language}` : ''}${lineNumbers ? ' line-numbers' : ''}`}
+                        className={`${styles.pre}${wrapLines ? ` ${styles.preWrap}` : ''}${language !== 'jwt' ? ` language-${language}` : ''}${lineNumbers ? ' line-numbers' : ''}`}
                         tabIndex={-1}>
                         <code
                             ref={codeRef}

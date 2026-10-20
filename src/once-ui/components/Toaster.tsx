@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Flex, Toast } from '.';
@@ -19,6 +19,15 @@ interface ToasterProps {
 const Toaster: React.FC<ToasterProps> = ({
     toasts,
     removeToast }) => {
+    // document.body only exists in the browser; skip the portal during server rendering.
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) return null;
+
     return createPortal(
         <Flex
             zIndex={11}
